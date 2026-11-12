@@ -1,6 +1,7 @@
 using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.IO;
+using System.Runtime.InteropServices;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
@@ -9,10 +10,15 @@ namespace QuickFileDesk;
 
 public partial class MainWindow
 {
-    private const string QuickSearchHint = "输入文件名开始搜索。网络位置需先加入 Everything 索引。";
-    private readonly ObservableCollection<EverythingHit> quickHits = [];
+    private const string QuickSearchHint = "输入文件名开始搜索。";
+    private readonly ObservableCollection<IndexedHit> quickHits = [];
+    private readonly WindowsSearch windowsSearch = new();
     private EverythingSearch? everythingSearch;
     private CancellationTokenSource? quickRequest;
+    private int quickOffset;
+    private bool? quickUsesEverything;
+    private string? quickScopeDrive;
+    private int quickScopeRevision;
     private TabItem? quickPreviousFolder;
     private static readonly object QuickTab = new();
     private static bool IsQuickTab(TabItem tab) => ReferenceEquals(tab.Tag, QuickTab);
@@ -35,16 +41,57 @@ public partial class MainWindow
         QuickResults.ItemsSource = quickHits;
         QuickStatus.Text = QuickSearchHint;
         QuickMore.Visibility = Visibility.Collapsed;
-        AddTabItem(QuickTab, "跨盘搜索", "用 Everything 搜索已索引位置");
+        AddTabItem(QuickTab, "跨盘搜索", "搜索已索引位置");
+        ShowQuickEngine(EverythingSearch.IsRunning, drive: null, refreshScope: true);
     }
 
-    private async Task SearchEverything(bool debounce = false, bool append = false)
+    private string? SelectedQuickDrive => QuickScope.SelectedValue is string { Length: > 0 } path ? path : null;
+
+    private void ShowQuickEngine(bool useEverything, string? drive, bool refreshScope = false)
+    {
+        if (!refreshScope && quickUsesEverything == useEverything && quickScopeDrive == drive) return;
+        quickUsesEverything = useEverything;
+        quickScopeDrive = drive;
+        var revision = ++quickScopeRevision;
+        QuickEngineLabel.Text = useEverything ? "搜索引擎 · Everything" : "搜索引擎 · Windows Search";
+        var scope = drive is null ? "全部已索引位置" : $"{drive.TrimEnd('\\')} 中已索引的位置";
+        QuickIndexScopeLabel.Text = $"索引范围 · {scope}";
+        QuickIndexScopeLabel.ToolTip = QuickIndexScopeLabel.Text;
+        if (!useEverything) _ = ShowWindowsIndexFolders(drive, revision);
+    }
+
+    private async Task ShowWindowsIndexFolders(string? drive, int revision)
+    {
+        string description;
+        try
+        {
+            var folders = await Task.Run(WindowsIndexScope.ReadFolders);
+            if (drive is not null)
+                folders = folders.Where(path => string.Equals(Path.GetPathRoot(path), drive, StringComparison.OrdinalIgnoreCase)).ToArray();
+            description = folders.Length == 0
+                ? "未找到此范围内已配置的文件夹"
+                : string.Join("、", folders);
+        }
+        catch (COMException) { description = "无法读取 Windows 索引范围"; }
+
+        if (closing || revision != quickScopeRevision) return;
+        var scope = drive?.TrimEnd('\\') ?? "全部";
+        QuickIndexScopeLabel.Text = $"索引范围 · {scope}：{description}";
+        QuickIndexScopeLabel.ToolTip = QuickIndexScopeLabel.Text;
+    }
+
+    private async Task SearchQuickIndex(bool debounce = false, bool append = false, bool refreshScope = false)
     {
         if (!QuickSearchActive || closing) return;
         quickRequest?.Cancel();
+        var drive = SelectedQuickDrive;
+        var useEverything = EverythingSearch.IsRunning;
+        if (quickUsesEverything != useEverything || quickScopeDrive != drive) append = false;
+        ShowQuickEngine(useEverything, drive, refreshScope);
         if (!append)
         {
             quickHits.Clear();
+            quickOffset = 0;
             QuickMore.Visibility = Visibility.Collapsed;
         }
         var term = QuickQuery.Text.Trim();
@@ -66,16 +113,34 @@ public partial class MainWindow
         try
         {
             if (debounce) await Task.Delay(160, request.Token);
-            var kind = QuickFilesOnly.IsChecked == true ? "file: " : QuickFoldersOnly.IsChecked == true ? "folder: " : "";
-            var drive = QuickScope.SelectedValue is string { Length: > 0 } path ? path : null;
-            var page = await (everythingSearch ??= new EverythingSearch()).Query(term, kind, drive, quickHits.Count, request.Token);
+            bool? folders = QuickFilesOnly.IsChecked == true ? false : QuickFoldersOnly.IsChecked == true ? true : null;
+            IndexedPage page;
+            if (useEverything)
+            {
+                try
+                {
+                    var filter = folders switch { true => "folder: ", false => "file: ", _ => "" };
+                    page = await (everythingSearch ??= new EverythingSearch()).Query(term, filter, drive, quickOffset, request.Token);
+                }
+                catch (Exception ex) when (ex is IOException or TimeoutException &&
+                    !request.IsCancellationRequested && !EverythingSearch.IsRunning)
+                {
+                    useEverything = false;
+                    ShowQuickEngine(false, drive);
+                    quickHits.Clear();
+                    quickOffset = 0;
+                    page = await windowsSearch.Query(term, folders, drive, quickOffset, request.Token);
+                }
+            }
+            else page = await windowsSearch.Query(term, folders, drive, quickOffset, request.Token);
             if (request.IsCancellationRequested) return;
             foreach (var hit in page.Hits) quickHits.Add(hit);
-            var more = page.Hits.Length != 0 && quickHits.Count < page.Total;
+            var more = page.NextOffset.HasValue;
+            if (page.NextOffset is int next) quickOffset = next;
             QuickMore.Visibility = more ? Visibility.Visible : Visibility.Collapsed;
-            QuickStatus.Text = page.Total == 0
-                ? "没有找到匹配项。网络位置需先加入 Everything 索引。"
-                : more ? $"已显示 {quickHits.Count:N0} / {page.Total:N0} 项"
+            QuickStatus.Text = quickHits.Count == 0
+                ? useEverything ? "没有找到匹配项。" : "Windows 索引中没有匹配项。新加入的目录可能还在建立索引。"
+                : more ? page.Total is int total ? $"已显示 {quickHits.Count:N0} / {total:N0} 项" : $"已显示 {quickHits.Count:N0} 项"
                 : $"找到 {quickHits.Count:N0} 项";
         }
         catch (OperationCanceledException) { }
@@ -98,14 +163,14 @@ public partial class MainWindow
         }
     }
 
-    private void QuickQueryChanged(object sender, TextChangedEventArgs e) => _ = SearchEverything(debounce: true);
-    private void QuickFilterChanged(object sender, SelectionChangedEventArgs e) => _ = SearchEverything();
-    private void QuickKindChanged(object sender, RoutedEventArgs e) => _ = SearchEverything();
-    private void QuickMoreClick(object sender, RoutedEventArgs e) => _ = SearchEverything(append: true);
+    private void QuickQueryChanged(object sender, TextChangedEventArgs e) => _ = SearchQuickIndex(debounce: true);
+    private void QuickFilterChanged(object sender, SelectionChangedEventArgs e) => _ = SearchQuickIndex();
+    private void QuickKindChanged(object sender, RoutedEventArgs e) => _ = SearchQuickIndex();
+    private void QuickMoreClick(object sender, RoutedEventArgs e) => _ = SearchQuickIndex(append: true);
 
     private void QuickQueryKey(object sender, KeyEventArgs e)
     {
-        if (e.Key == Key.Enter) _ = SearchEverything();
+        if (e.Key == Key.Enter) _ = SearchQuickIndex(refreshScope: true);
         else if (e.Key == Key.Escape) QuickQuery.Clear();
         else return;
         e.Handled = true;
@@ -121,24 +186,24 @@ public partial class MainWindow
 
     private async void LocateQuickResultClick(object sender, RoutedEventArgs e)
     {
-        if (QuickResults.SelectedItem is EverythingHit hit) await LocateQuickResult(hit);
+        if (QuickResults.SelectedItem is IndexedHit hit) await LocateQuickResult(hit);
     }
 
     private async void OpenQuickDoubleClick(object sender, MouseButtonEventArgs e)
     {
         if (e.ChangedButton == MouseButton.Left && e.OriginalSource is DependencyObject element &&
-            ItemsControl.ContainerFromElement(QuickResults, element) is ListViewItem { DataContext: EverythingHit hit })
+            ItemsControl.ContainerFromElement(QuickResults, element) is ListViewItem { DataContext: IndexedHit hit })
             await OpenQuickResult(hit);
     }
 
     private async void QuickResultKey(object sender, KeyEventArgs e)
     {
-        if (e.Key != Key.Enter || QuickResults.SelectedItem is not EverythingHit hit) return;
+        if (e.Key != Key.Enter || QuickResults.SelectedItem is not IndexedHit hit) return;
         e.Handled = true;
         await OpenQuickResult(hit);
     }
 
-    private async Task OpenQuickResult(EverythingHit hit)
+    private async Task OpenQuickResult(IndexedHit hit)
     {
         if (hit.IsFolder)
         {
@@ -157,7 +222,7 @@ public partial class MainWindow
         ShellStart(new ProcessStartInfo(hit.FullPath) { UseShellExecute = true });
     }
 
-    private async Task LocateQuickResult(EverythingHit hit)
+    private async Task LocateQuickResult(IndexedHit hit)
     {
         await Navigate(hit.Folder, selectPath: hit.FullPath);
         if (Current is not { Loaded: true } tab || !FileOperations.SamePath(tab.Path, hit.Folder)) return;

@@ -6,7 +6,7 @@ using System.Windows.Interop;
 
 namespace QuickFileDesk;
 
-internal sealed record EverythingHit(string Name, string Folder, bool IsFolder, long Bytes, DateTime? Modified)
+internal sealed record IndexedHit(string Name, string Folder, bool IsFolder, long Bytes, DateTime? Modified)
 {
     public string FullPath => Folder.Length == 0 ? Name : Path.Combine(Folder, Name);
     public string UpdatedText => Modified?.ToString("yyyy-MM-dd HH:mm") ?? "—";
@@ -14,7 +14,7 @@ internal sealed record EverythingHit(string Name, string Folder, bool IsFolder, 
     public string Glyph => IsFolder ? "\uE8B7" : "\uE8A5";
 }
 
-internal sealed record EverythingPage(int Total, EverythingHit[] Hits);
+internal sealed record IndexedPage(int? Total, IndexedHit[] Hits, int? NextOffset);
 
 internal sealed class EverythingSearch : IDisposable
 {
@@ -27,7 +27,7 @@ internal sealed class EverythingSearch : IDisposable
     private const int AbortHung = 0x0003; // SMTO_BLOCK | SMTO_ABORTIFHUNG
     private readonly HwndSource replyWindow;
     private int replyId;
-    private TaskCompletionSource<EverythingPage>? pending;
+    private TaskCompletionSource<IndexedPage>? pending;
 
     public EverythingSearch()
     {
@@ -38,10 +38,12 @@ internal sealed class EverythingSearch : IDisposable
         replyWindow.AddHook(Receive);
     }
 
-    public async Task<EverythingPage> Query(string term, string filter, string? drive, int offset, CancellationToken cancellation)
+    public static bool IsRunning => FindServer() != IntPtr.Zero;
+
+    public async Task<IndexedPage> Query(string term, string filter, string? drive, int offset, CancellationToken cancellation)
     {
         // Everything responds later by sending WM_COPYDATA to the reply window.
-        var reply = new TaskCompletionSource<EverythingPage>(TaskCreationOptions.RunContinuationsAsynchronously);
+        var reply = new TaskCompletionSource<IndexedPage>(TaskCreationOptions.RunContinuationsAsynchronously);
         var id = unchecked(++replyId);
         pending = reply;
         var hwnd = replyWindow.Handle;
@@ -58,8 +60,7 @@ internal sealed class EverythingSearch : IDisposable
 
     private static void Send(IntPtr hwnd, int id, string term, string filter, string? drive, int offset, CancellationToken cancellation)
     {
-        var server = FindWindow("EVERYTHING_TASKBAR_NOTIFICATION", null);
-        if (server == IntPtr.Zero) server = FindWindow("EVERYTHING_TASKBAR_NOTIFICATION_(1.5a)", null);
+        var server = FindServer();
         if (server == IntPtr.Zero)
             throw new IOException("Everything 未在后台运行。请打开 Everything，再按回车重试。");
         CheckSend(SendMessageTimeout(server, IpcMessage, new IntPtr(IsDbLoaded), IntPtr.Zero, AbortHung, 1200, out var ready));
@@ -116,18 +117,24 @@ internal sealed class EverythingSearch : IDisposable
         return new IntPtr(1);
     }
 
-    private static EverythingPage ReadPage(byte[] bytes)
+    private static IntPtr FindServer()
+    {
+        var server = FindWindow("EVERYTHING_TASKBAR_NOTIFICATION", null);
+        return server != IntPtr.Zero ? server : FindWindow("EVERYTHING_TASKBAR_NOTIFICATION_(1.5a)", null);
+    }
+
+    private static IndexedPage ReadPage(byte[] bytes)
     {
         using var reader = new BinaryReader(new MemoryStream(bytes));
         var total = reader.ReadInt32();
         var count = reader.ReadInt32();
-        _ = reader.ReadInt32(); // offset
+        var pageOffset = reader.ReadInt32();
         var flags = reader.ReadInt32();
-        if (count is < 0 or > PageSize || total < count || 20 + 8 * count > bytes.Length ||
+        if (count is < 0 or > PageSize || total < count || pageOffset < 0 || 20 + 8 * count > bytes.Length ||
             (flags & (NameFlag | PathFlag)) != (NameFlag | PathFlag) || (flags & ~RequestFlags) != 0)
             throw new InvalidDataException();
 
-        var hits = new EverythingHit[count];
+        var hits = new IndexedHit[count];
         for (var i = 0; i < count; i++)
         {
             reader.BaseStream.Position = 20 + 8 * i;
@@ -142,9 +149,9 @@ internal sealed class EverythingSearch : IDisposable
             var size = (flags & SizeFlag) != 0 ? reader.ReadInt64() : -1;
             var timestamp = (flags & ModifiedFlag) != 0 ? reader.ReadInt64() : 0;
             var modified = timestamp is > 0 and <= 2650467743999999999L ? DateTime.FromFileTime(timestamp) : (DateTime?)null;
-            hits[i] = new EverythingHit(name, folder, isFolder, size, modified);
+            hits[i] = new IndexedHit(name, folder, isFolder, size, modified);
         }
-        return new EverythingPage(total, hits);
+        return new IndexedPage(total, hits, count > 0 && (long)pageOffset + count < total ? pageOffset + count : null);
     }
 
     private static string ReadText(BinaryReader reader, byte[] bytes)

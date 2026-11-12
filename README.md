@@ -1,22 +1,22 @@
 # PathDeck · Windows 文件资源管理器
 
-PathDeck 是一款面向 Windows 的便携文件资源管理器，集成单栏多标签浏览、Everything 跨盘查找和图片检查，适合在项目目录、数据集和输出文件之间频繁切换。
+PathDeck 是一款面向 Windows 的便携文件资源管理器，集成单栏多标签浏览、跨盘查找和图片检查，适合在项目目录、数据集和输出文件之间频繁切换。
 
-当前版本为 **1.0.1**。便携版可免费下载。
+当前版本为 **1.0.2**。便携版可免费下载。
 
 ## 下载并运行
 
-1. 从 [GitHub Releases](https://github.com/wangduyang/PathDeck/releases/tag/v1.0.1) 下载 `PathDeck-1.0.1-win-x64.zip`。
+1. 从 [GitHub Releases](https://github.com/wangduyang/PathDeck/releases/tag/v1.0.2) 下载 `PathDeck-1.0.2-win-x64.zip`。
 2. 将 ZIP 完整解压到有写入权限的目录。
 3. 双击 `PathDeck.exe`。便携包内含 .NET 桌面运行时，可以直接启动。
 
-本次发布适用于 Windows x64，已在 Windows 11 x64 验证。「跨盘搜索」使用本机 Everything 的索引，需要另外安装并运行 Everything。「搜索当前目录」可以直接使用。
+本次发布适用于 Windows x64，已在 Windows 11 x64 验证。「跨盘搜索」优先使用已运行的 Everything，未运行时自动使用 Windows Search。
 
 ## 同类文件资源管理器比较
 
 | 产品 | 下载或使用费用 | 适用场景 |
 | --- | --- | --- |
-| **PathDeck** | **便携版免费下载** | 单栏多标签、带自定义名称的固定目录、Everything 跨盘搜索。内置图像测距、像素读数及 NIfTI 分割叠加，适合浏览数据集和复核图像输出。 |
+| **PathDeck** | **便携版免费下载** | 单栏多标签、带自定义名称的固定目录，支持 Everything 和 Windows Search 跨盘搜索。内置图像测距、像素读数及 NIfTI 分割叠加，适合浏览数据集和复核图像输出。 |
 | [Windows 文件资源管理器](https://support.microsoft.com/zh-cn/windows/experience/fileexplorer/file-explorer-in-windows) | 随 Windows 提供 | 日常文件管理、系统文件夹、Windows Search 和云文件访问。 |
 | [OneCommander](https://www.onecommander.com/) | [个人非商业使用免费，商业使用需购买 Pro](https://www.onecommander.com/pricing) | 多标签浏览、文件与文件夹预览。适合希望使用单栏或双栏来组织文件的用户。 |
 | [Double Commander](https://doublecmd.sourceforge.io/index.php?lang=eng) | 免费、开源 | 双栏文件管理、批量重命名和归档浏览。适合在两个目录之间批量处理文件。 |
@@ -52,9 +52,11 @@ dotnet publish .\src\QuickFileDesk.csproj -c Release -r win-x64 --self-contained
 
 ### 浏览、搜索和整理
 
-地址栏右侧的「搜索当前目录」用于查找当前目录及其子目录。要搜索其他磁盘或共享位置，点击窗口顶部设置旁的「跨盘搜索」。它在独立标签页查询本机 [Everything](https://www.voidtools.com/) 的现有索引，支持按磁盘和类型筛选。双击或按回车打开结果；选中结果后可点击「打开所在文件夹」并定位到该项。
+地址栏右侧的「搜索当前目录」用于查找当前目录及其子目录。点击窗口顶部的「跨盘搜索」可按文件名查找已索引位置，并按磁盘和类型筛选。双击或按回车打开结果。选中结果后可点击「打开所在文件夹」定位到该项。
 
-跨盘搜索需要 Everything 客户端在后台运行。网络共享只有加入 Everything 索引后才能搜索；如果以 UNC 路径加入索引，在「全部已索引位置」中搜索。
+搜索页显示当前引擎和索引范围。使用 Windows Search 时，页面按所选盘符显示系统配置的索引目录，悬停可查看完整列表。新增目录需要在 Windows 的「索引选项」中添加并等待建立索引。PathDeck 的固定位置用于快速导航。
+
+Everything 支持查找其索引中的网络共享。以 UNC 路径加入 Everything 索引的共享可以在「全部已索引位置」中搜索。
 
 - 点击标签页旁的「＋」或按 Ctrl+T 会新建「此电脑」标签页。启用 PathDeck 的 Win+E 快捷键后，按 Win+E 打开「此电脑」查看当前驱动器的总容量和剩余容量。双击盘符进入，已有标签页仍可切换。驱动器下方列出「经常访问」，单击即可打开固定的文件夹。
 

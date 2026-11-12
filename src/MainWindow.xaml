@@ -313,7 +313,7 @@
                 </DockPanel>
                 <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Top" Margin="8,0,0,5">
                     <Button x:Name="QuickSearchButton" Height="30" Click="QuickSearchClick" Style="{StaticResource PrimaryActionButton}"
-                            ToolTip="用 Everything 搜索各磁盘和网络共享中已建立索引的位置" AutomationProperties.Name="跨盘搜索">
+                            ToolTip="搜索各磁盘中已建立索引的位置" AutomationProperties.Name="跨盘搜索">
                         <StackPanel Orientation="Horizontal">
                             <TextBlock Text="&#xE774;" FontFamily="Segoe MDL2 Assets" VerticalAlignment="Center"/>
                             <TextBlock Text="跨盘搜索" Margin="6,0,0,0" VerticalAlignment="Center"/>
@@ -861,7 +861,8 @@
                         CornerRadius="12" Padding="16,12,16,14">
                     <StackPanel>
                         <DockPanel Margin="0,0,0,12">
-                            <TextBlock DockPanel.Dock="Right" Text="Everything 索引" FontSize="12" Foreground="{DynamicResource Muted}" VerticalAlignment="Center"/>
+                            <TextBlock x:Name="QuickEngineLabel" DockPanel.Dock="Right" FontSize="12"
+                                       Foreground="{DynamicResource Muted}" VerticalAlignment="Center"/>
                             <TextBlock Text="跨盘搜索" FontSize="20" FontWeight="SemiBold" VerticalAlignment="Center"/>
                         </DockPanel>
                         <DockPanel Height="40">
@@ -903,6 +904,8 @@
                                 </DockPanel>
                             </Border>
                         </DockPanel>
+                        <TextBlock x:Name="QuickIndexScopeLabel" Margin="1,7,0,0" FontSize="12"
+                                   Foreground="{DynamicResource Muted}" TextTrimming="CharacterEllipsis"/>
                     </StackPanel>
                 </Border>
                 <DockPanel Grid.Row="1" Margin="0,8,0,8">
@@ -1008,7 +1011,7 @@
                 </Border>
                 <DockPanel Grid.Row="3" Margin="2,7,2,0" MinHeight="25">
                     <Button x:Name="QuickMore" DockPanel.Dock="Right" Content="加载更多" Visibility="Collapsed" Click="QuickMoreClick"/>
-                    <TextBlock x:Name="QuickStatus" Text="输入文件名开始搜索。网络位置需先加入 Everything 索引。"
+                    <TextBlock x:Name="QuickStatus" Text="输入文件名开始搜索。"
                                TextWrapping="Wrap" Foreground="{DynamicResource Muted}" VerticalAlignment="Center"
                                AutomationProperties.LiveSetting="Polite"/>
                 </DockPanel>

@@ -8,7 +8,7 @@
     <AssemblyName>PathDeck</AssemblyName>
     <Product>PathDeck</Product>
     <AssemblyTitle>PathDeck</AssemblyTitle>
-    <Version>1.0.1</Version>
+    <Version>1.0.2</Version>
     <IncludeSourceRevisionInInformationalVersion>false</IncludeSourceRevisionInInformationalVersion>
     <ApplicationIcon>PathDeck.ico</ApplicationIcon>
   </PropertyGroup>

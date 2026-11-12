@@ -967,7 +967,7 @@ public partial class MainWindow : Window
             if (mods == ModifierKeys.Control && key == Key.F) { QuickQuery.Focus(); QuickQuery.SelectAll(); }
             else if (mods == ModifierKeys.Control && key == Key.T) NewTabClick(sender, e);
             else if (mods == ModifierKeys.Control && key == Key.W && Tabs.SelectedItem is TabItem quick) CloseTab(quick);
-            else if (mods == ModifierKeys.None && key == Key.F5) _ = SearchEverything();
+            else if (mods == ModifierKeys.None && key == Key.F5) _ = SearchQuickIndex(refreshScope: true);
             else return;
             e.Handled = true;
             return;

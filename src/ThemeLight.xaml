@@ -1,0 +1,69 @@
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <SolidColorBrush x:Key="WindowBackground">#F2F5F7</SolidColorBrush>
+    <SolidColorBrush x:Key="Chrome">#FAFCFD</SolidColorBrush>
+    <SolidColorBrush x:Key="Panel">#FFFFFF</SolidColorBrush>
+    <SolidColorBrush x:Key="OverviewTile">#F0F4F6</SolidColorBrush>
+    <SolidColorBrush x:Key="Sidebar">#E9EFF3</SolidColorBrush>
+    <SolidColorBrush x:Key="SidebarCard">#FBFCFD</SolidColorBrush>
+    <SolidColorBrush x:Key="Field">#EDF2F5</SolidColorBrush>
+    <SolidColorBrush x:Key="ToolbarSurface">#E8EEF1</SolidColorBrush>
+    <SolidColorBrush x:Key="Edge">#D6E0E7</SolidColorBrush>
+    <SolidColorBrush x:Key="RowDivider">#E9EEF2</SolidColorBrush>
+    <SolidColorBrush x:Key="Text">#19272F</SolidColorBrush>
+    <SolidColorBrush x:Key="Muted">#50616D</SolidColorBrush>
+    <SolidColorBrush x:Key="Accent">#17654F</SolidColorBrush>
+    <SolidColorBrush x:Key="FocusEdge">#398B73</SolidColorBrush>
+    <SolidColorBrush x:Key="Selected">#DBF0E8</SolidColorBrush>
+    <SolidColorBrush x:Key="Hover">#EFF6F5</SolidColorBrush>
+    <SolidColorBrush x:Key="ButtonSurface">#ECF5F1</SolidColorBrush>
+    <SolidColorBrush x:Key="ButtonEdge">#C7E1D8</SolidColorBrush>
+    <SolidColorBrush x:Key="ButtonHover">#DAEEE6</SolidColorBrush>
+    <SolidColorBrush x:Key="PrimaryFill">#16654E</SolidColorBrush>
+    <SolidColorBrush x:Key="PrimaryHover">#0E513D</SolidColorBrush>
+    <SolidColorBrush x:Key="PrimaryText">#FFFFFF</SolidColorBrush>
+    <LinearGradientBrush x:Key="SearchSurface" StartPoint="0,0" EndPoint="1,0">
+        <GradientStop Offset="0" Color="#FFFFFF"/>
+        <GradientStop Offset="1" Color="#EAF6F1"/>
+    </LinearGradientBrush>
+    <SolidColorBrush x:Key="GaugeTrack">#E6EFEE</SolidColorBrush>
+    <SolidColorBrush x:Key="GaugeOutline">#718D86</SolidColorBrush>
+    <SolidColorBrush x:Key="Grip">#BFCDD6</SolidColorBrush>
+    <SolidColorBrush x:Key="ScrollThumb">#82939F</SolidColorBrush>
+    <SolidColorBrush x:Key="ScrollHover">#627783</SolidColorBrush>
+    <SolidColorBrush x:Key="SwitchTrack">#C9D8DE</SolidColorBrush>
+    <SolidColorBrush x:Key="IdleDot">#8F9DA7</SolidColorBrush>
+    <SolidColorBrush x:Key="ActiveDot">#218465</SolidColorBrush>
+    <SolidColorBrush x:Key="AgeRecentBackground">#FAEAE3</SolidColorBrush>
+    <SolidColorBrush x:Key="AgeRecentText">#913E32</SolidColorBrush>
+    <SolidColorBrush x:Key="AgeDayBackground">#FCF0D4</SolidColorBrush>
+    <SolidColorBrush x:Key="AgeDayText">#785115</SolidColorBrush>
+    <SolidColorBrush x:Key="AgeWeekBackground">#E4F1E4</SolidColorBrush>
+    <SolidColorBrush x:Key="AgeWeekText">#326245</SolidColorBrush>
+    <SolidColorBrush x:Key="AgeMonthBackground">#E7F0FA</SolidColorBrush>
+    <SolidColorBrush x:Key="AgeMonthText">#365D83</SolidColorBrush>
+    <SolidColorBrush x:Key="ErrorText">#A52B2B</SolidColorBrush>
+    <SolidColorBrush x:Key="IconBlue">#4169E1</SolidColorBrush>
+    <SolidColorBrush x:Key="IconTeal">#008B8B</SolidColorBrush>
+    <SolidColorBrush x:Key="IconViolet">#483D8B</SolidColorBrush>
+    <SolidColorBrush x:Key="IconRed">#B22222</SolidColorBrush>
+    <SolidColorBrush x:Key="IconGold">#B8860B</SolidColorBrush>
+    <SolidColorBrush x:Key="IconGreen">#2E8B57</SolidColorBrush>
+    <SolidColorBrush x:Key="IconSlate">#708090</SolidColorBrush>
+    <SolidColorBrush x:Key="FolderBack">#327C66</SolidColorBrush>
+    <SolidColorBrush x:Key="SwitchKnob">#FFFFFF</SolidColorBrush>
+    <Color x:Key="FolderTop">#89D4BC</Color>
+    <Color x:Key="FolderBottom">#45A184</Color>
+
+    <SolidColorBrush x:Key="{x:Static SystemColors.MenuBrushKey}">#FFFFFF</SolidColorBrush>
+    <SolidColorBrush x:Key="{x:Static SystemColors.MenuTextBrushKey}">#19272F</SolidColorBrush>
+    <SolidColorBrush x:Key="{x:Static SystemColors.WindowBrushKey}">#FFFFFF</SolidColorBrush>
+    <SolidColorBrush x:Key="{x:Static SystemColors.WindowTextBrushKey}">#19272F</SolidColorBrush>
+    <SolidColorBrush x:Key="{x:Static SystemColors.ControlBrushKey}">#EDF2F5</SolidColorBrush>
+    <SolidColorBrush x:Key="{x:Static SystemColors.ControlTextBrushKey}">#19272F</SolidColorBrush>
+    <SolidColorBrush x:Key="{x:Static SystemColors.HighlightBrushKey}">#DBF0E8</SolidColorBrush>
+    <SolidColorBrush x:Key="{x:Static SystemColors.HighlightTextBrushKey}">#19272F</SolidColorBrush>
+    <SolidColorBrush x:Key="{x:Static SystemColors.InactiveSelectionHighlightBrushKey}">#EFF6F5</SolidColorBrush>
+    <SolidColorBrush x:Key="{x:Static SystemColors.InactiveSelectionHighlightTextBrushKey}">#19272F</SolidColorBrush>
+    <SolidColorBrush x:Key="{x:Static SystemColors.GrayTextBrushKey}">#50616D</SolidColorBrush>
+</ResourceDictionary>

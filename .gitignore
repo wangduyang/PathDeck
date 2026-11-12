@@ -1,0 +1,20 @@
+# Build and editor output
+[Bb]in/
+[Oo]bj/
+.vs/
+*.user
+*.suo
+/artifacts/
+/run/
+
+# Portable runtime preferences
+pins.json
+colors.json
+menu.json
+win-e.enabled
+*.tmp
+
+# Local verification captures
+/1Commander-preview.png
+/1Commander-menu-preview.png
+

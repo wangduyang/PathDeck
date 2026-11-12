@@ -1,0 +1,32 @@
+<Window x:Class="QuickFileDesk.AnnotationSaveWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="另存标注" Width="496" Style="{StaticResource DialogWindow}" Loaded="FocusName">
+    <StackPanel Margin="16">
+        <Border Style="{StaticResource DialogCard}">
+            <StackPanel>
+                <TextBlock Text="保存位置" FontWeight="SemiBold" Margin="0,0,0,6"/>
+                <DockPanel>
+                    <Button DockPanel.Dock="Right" Content="浏览…" Style="{StaticResource DialogButton}"
+                            Click="BrowseFolder" Margin="8,0,0,0"/>
+                    <TextBox x:Name="FolderInput" Style="{StaticResource DialogInput}" AutomationProperties.Name="保存位置"
+                             TextChanged="InputChanged"/>
+                </DockPanel>
+                <TextBlock Text="文件名" FontWeight="SemiBold" Margin="0,12,0,6"/>
+                <DockPanel>
+                    <Border DockPanel.Dock="Right" CornerRadius="8" Background="{DynamicResource Field}" Margin="8,0,0,0" Padding="9,0">
+                        <TextBlock Text=".png" VerticalAlignment="Center" Foreground="{DynamicResource Muted}"/>
+                    </Border>
+                    <TextBox x:Name="NameInput" Style="{StaticResource DialogInput}" AutomationProperties.Name="文件名"
+                             TextChanged="InputChanged"/>
+                </DockPanel>
+                <TextBlock x:Name="InputError" Foreground="{DynamicResource ErrorText}" TextWrapping="Wrap"
+                           Margin="0,8,0,0" Visibility="Collapsed"/>
+            </StackPanel>
+        </Border>
+        <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,14,0,0">
+            <Button Content="取消" IsCancel="True" Style="{StaticResource DialogButton}" MinWidth="74" Margin="0,0,8,0"/>
+            <Button x:Name="SaveCopyButton" Content="保存副本" IsDefault="True" Style="{StaticResource DialogPrimaryButton}" Click="AcceptPath"/>
+        </StackPanel>
+    </StackPanel>
+</Window>

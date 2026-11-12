@@ -1,0 +1,17 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net9.0-windows</TargetFramework>
+    <UseWPF>true</UseWPF>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <AssemblyName>1Commander</AssemblyName>
+    <Product>PathDeck</Product>
+    <AssemblyTitle>PathDeck</AssemblyTitle>
+    <Version>0.5.23</Version>
+    <ApplicationIcon>PathDeck.ico</ApplicationIcon>
+  </PropertyGroup>
+  <ItemGroup>
+    <Resource Include="PathDeck.ico"/>
+  </ItemGroup>
+</Project>

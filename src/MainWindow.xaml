@@ -1,0 +1,1035 @@
+<Window x:Class="QuickFileDesk.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:local="clr-namespace:QuickFileDesk"
+        Title="PathDeck" Icon="PathDeck.ico" Width="1260" Height="780" MinWidth="880" MinHeight="490"
+        WindowStartupLocation="CenterScreen" Background="{DynamicResource WindowBackground}" Foreground="{DynamicResource Text}"
+        FontFamily="Segoe UI, Microsoft YaHei UI" FontSize="13"
+        Loaded="Start" Closing="CheckClose" Closed="Stop" PreviewKeyDown="Shortcuts"
+        UseLayoutRounding="True">
+    <Window.Resources>
+        <local:FileAgeConverter x:Key="FileAgeConverter"/>
+        <Style TargetType="Button">
+            <Setter Property="Foreground" Value="{DynamicResource Text}"/>
+            <Setter Property="Background" Value="{DynamicResource ButtonSurface}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource ButtonEdge}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="Padding" Value="10,5"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="Fill" CornerRadius="8" Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}"
+                                Padding="{TemplateBinding Padding}">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True"><Setter TargetName="Fill" Property="Background" Value="{DynamicResource ButtonHover}"/></Trigger>
+                            <Trigger Property="IsKeyboardFocused" Value="True"><Setter TargetName="Fill" Property="BorderBrush" Value="{DynamicResource Accent}"/></Trigger>
+                            <Trigger Property="IsEnabled" Value="False"><Setter TargetName="Fill" Property="Opacity" Value=".38"/></Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+        <Style x:Key="ToolbarButton" TargetType="Button" BasedOn="{StaticResource {x:Type Button}}">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="BorderBrush" Value="Transparent"/>
+            <Setter Property="Padding" Value="6,4"/>
+        </Style>
+        <Style x:Key="PrimaryActionButton" TargetType="Button" BasedOn="{StaticResource {x:Type Button}}">
+            <Setter Property="Foreground" Value="{DynamicResource PrimaryText}"/>
+            <Setter Property="Background" Value="{DynamicResource PrimaryFill}"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Padding" Value="12,4"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="Fill" Background="{TemplateBinding Background}" BorderBrush="Transparent"
+                                BorderThickness="1" CornerRadius="8" Padding="{TemplateBinding Padding}">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Fill" Property="Background" Value="{DynamicResource PrimaryHover}"/>
+                            </Trigger>
+                            <Trigger Property="IsKeyboardFocused" Value="True">
+                                <Setter TargetName="Fill" Property="BorderBrush" Value="{DynamicResource PrimaryText}"/>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="Fill" Property="Opacity" Value=".86"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+        <Style x:Key="PathButton" TargetType="Button" BasedOn="{StaticResource ToolbarButton}">
+            <Setter Property="Padding" Value="8,3"/>
+            <Setter Property="FontSize" Value="13"/>
+        </Style>
+        <Style x:Key="PathArrow" TargetType="Button" BasedOn="{StaticResource ToolbarButton}">
+            <Setter Property="Foreground" Value="{DynamicResource Muted}"/>
+            <Setter Property="FontFamily" Value="Segoe MDL2 Assets"/>
+            <Setter Property="FontSize" Value="10"/>
+            <Setter Property="Padding" Value="4,2"/>
+        </Style>
+        <Style TargetType="TextBox">
+            <Setter Property="Background" Value="{DynamicResource Field}"/>
+            <Setter Property="Foreground" Value="{DynamicResource Text}"/>
+            <Setter Property="CaretBrush" Value="{DynamicResource Text}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource Edge}"/>
+            <Setter Property="Padding" Value="9,4"/>
+            <Setter Property="VerticalContentAlignment" Value="Center"/>
+        </Style>
+        <Style TargetType="GridViewColumnHeader">
+            <Setter Property="Foreground" Value="{DynamicResource Muted}"/>
+            <Setter Property="Background" Value="{DynamicResource OverviewTile}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource Edge}"/>
+            <Setter Property="HorizontalContentAlignment" Value="Left"/>
+            <Setter Property="FontSize" Value="12"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Padding" Value="10,7"/>
+            <Style.Triggers>
+                <Trigger Property="Role" Value="Normal">
+                    <Setter Property="Template">
+                        <Setter.Value>
+                            <ControlTemplate TargetType="GridViewColumnHeader">
+                                <Grid>
+                                    <Border x:Name="HeaderSurface" Background="{TemplateBinding Background}"
+                                            BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="0,0,0,1"
+                                            Padding="{TemplateBinding Padding}">
+                                        <ContentPresenter HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}" VerticalAlignment="Center"/>
+                                    </Border>
+                                    <Thumb x:Name="PART_HeaderGripper" Width="8" HorizontalAlignment="Right" Cursor="SizeWE">
+                                        <Thumb.Template>
+                                            <ControlTemplate TargetType="Thumb">
+                                                <Border Background="Transparent">
+                                                    <Border Width="1" HorizontalAlignment="Right" Margin="0,8,0,8"
+                                                            Background="{DynamicResource Edge}"/>
+                                                </Border>
+                                            </ControlTemplate>
+                                        </Thumb.Template>
+                                    </Thumb>
+                                </Grid>
+                                <ControlTemplate.Triggers>
+                                    <Trigger Property="IsMouseOver" Value="True">
+                                        <Setter TargetName="HeaderSurface" Property="Background" Value="{DynamicResource Hover}"/>
+                                    </Trigger>
+                                    <Trigger Property="IsPressed" Value="True">
+                                        <Setter TargetName="HeaderSurface" Property="Background" Value="{DynamicResource Selected}"/>
+                                    </Trigger>
+                                </ControlTemplate.Triggers>
+                            </ControlTemplate>
+                        </Setter.Value>
+                    </Setter>
+                </Trigger>
+                <Trigger Property="Role" Value="Padding">
+                    <Setter Property="Template">
+                        <Setter.Value>
+                            <ControlTemplate TargetType="GridViewColumnHeader">
+                                <Border Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="0,0,0,1"/>
+                            </ControlTemplate>
+                        </Setter.Value>
+                    </Setter>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+        <Style TargetType="ListViewItem">
+            <Setter Property="Foreground" Value="{DynamicResource Text}"/>
+            <Setter Property="MinHeight" Value="{DynamicResource FileRowHeight}"/>
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="ListViewItem">
+                        <Border x:Name="Row" Background="{TemplateBinding Background}" BorderBrush="{DynamicResource RowDivider}" BorderThickness="0,0,0,1"
+                                Padding="0,4" SnapsToDevicePixels="True">
+                            <GridViewRowPresenter VerticalAlignment="Center" Content="{TemplateBinding Content}"
+                                                  Columns="{Binding View.Columns, RelativeSource={RelativeSource AncestorType=ListView}}"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Row" Property="Background" Value="{DynamicResource Hover}"/>
+                            </Trigger>
+                            <Trigger Property="IsSelected" Value="True">
+                                <Setter TargetName="Row" Property="Background" Value="{DynamicResource Selected}"/>
+                            </Trigger>
+                            <Trigger Property="IsKeyboardFocused" Value="True">
+                                <Setter TargetName="Row" Property="BorderBrush" Value="{DynamicResource FocusEdge}"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+        <Style TargetType="TabItem">
+            <Setter Property="Foreground" Value="{DynamicResource Muted}"/>
+            <Setter Property="MaxWidth" Value="235"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="TabItem">
+                        <Border x:Name="TabBackground" Background="Transparent" CornerRadius="8" MinHeight="30"
+                                BorderBrush="Transparent" BorderThickness="1" Margin="0,0,5,5" Padding="10,4,5,4">
+                            <DockPanel>
+                                <Ellipse x:Name="TabSelectionDot" DockPanel.Dock="Left" Width="6" Height="6" Fill="{DynamicResource IdleDot}"
+                                         VerticalAlignment="Center" Margin="0,0,6,0" IsHitTestVisible="False"/>
+                                <ContentPresenter ContentSource="Header" VerticalAlignment="Center"/>
+                            </DockPanel>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="TabBackground" Property="Background" Value="{DynamicResource Hover}"/>
+                            </Trigger>
+                            <Trigger Property="IsSelected" Value="True">
+                                <Setter TargetName="TabBackground" Property="Background" Value="{DynamicResource Selected}"/>
+                                <Setter TargetName="TabBackground" Property="BorderBrush" Value="{DynamicResource ButtonEdge}"/>
+                                <Setter TargetName="TabSelectionDot" Property="Fill" Value="{DynamicResource ActiveDot}"/>
+                                <Setter Property="Foreground" Value="{DynamicResource Accent}"/>
+                                <Setter Property="FontWeight" Value="SemiBold"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+        <Style x:Key="LocationButton" TargetType="Button" BasedOn="{StaticResource {x:Type Button}}">
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="Tile" Padding="9,7" CornerRadius="8" Background="{TemplateBinding Background}">
+                            <ContentPresenter/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True"><Setter TargetName="Tile" Property="Background" Value="{DynamicResource Hover}"/></Trigger>
+                            <Trigger Property="IsKeyboardFocused" Value="True"><Setter TargetName="Tile" Property="Background" Value="{DynamicResource Hover}"/></Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+        <Style x:Key="SidebarCardSurface" TargetType="Border">
+            <Setter Property="Background" Value="{DynamicResource SidebarCard}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource Edge}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="CornerRadius" Value="12"/>
+            <Setter Property="Effect">
+                <Setter.Value>
+                    <DropShadowEffect Color="#283B4D" BlurRadius="10" ShadowDepth="2" Direction="270" Opacity=".11"/>
+                </Setter.Value>
+            </Setter>
+        </Style>
+        <Style x:Key="SidebarSectionTitle" TargetType="TextBlock">
+            <Setter Property="Foreground" Value="{DynamicResource Muted}"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="FontSize" Value="12"/>
+            <Setter Property="VerticalAlignment" Value="Center"/>
+        </Style>
+        <DataTemplate x:Key="FileIcon">
+            <Grid Width="26" Height="26">
+                <Viewbox x:Name="Paper">
+                    <Canvas Width="26" Height="26">
+                        <Path Data="M 5,3 Q 5,1.5 6.5,1.5 L 15,1.5 21,7.5 21,22 Q 21,24 19,24 L 7,24 Q 5,24 5,22 Z"
+                              StrokeThickness="1.2" StrokeLineJoin="Round">
+                            <Path.Fill><SolidColorBrush Color="{Binding IconColor}" Opacity=".12"/></Path.Fill>
+                            <Path.Stroke><SolidColorBrush Color="{Binding IconColor}"/></Path.Stroke>
+                        </Path>
+                        <Path Data="M 15,2 L 15,7.5 20.5,7.5 Z" StrokeThickness=".8">
+                            <Path.Fill><SolidColorBrush Color="{Binding IconColor}" Opacity=".27"/></Path.Fill>
+                            <Path.Stroke><SolidColorBrush Color="{Binding IconColor}"/></Path.Stroke>
+                        </Path>
+                        <Path Data="M 8.5,12 L 17.5,12 M 8.5,15.5 L 17.5,15.5 M 8.5,19 L 14.5,19"
+                              StrokeThickness="1.25" StrokeStartLineCap="Round" StrokeEndLineCap="Round">
+                            <Path.Stroke><SolidColorBrush Color="{Binding IconColor}"/></Path.Stroke>
+                        </Path>
+                    </Canvas>
+                </Viewbox>
+                <Viewbox x:Name="Photo" Visibility="Collapsed">
+                    <Canvas Width="26" Height="26">
+                        <Rectangle Canvas.Left="2" Canvas.Top="3.5" Width="22" Height="19" RadiusX="4" RadiusY="4" StrokeThickness="1.2">
+                            <Rectangle.Fill><SolidColorBrush Color="{Binding IconColor}" Opacity=".14"/></Rectangle.Fill>
+                            <Rectangle.Stroke><SolidColorBrush Color="{Binding IconColor}"/></Rectangle.Stroke>
+                        </Rectangle>
+                        <Ellipse Canvas.Left="7" Canvas.Top="7" Width="4" Height="4" Fill="#FBB645"/>
+                        <Path Data="M 4,19 L 10,13.5 13,16 18.5,10.5 22,14.4 22,19 Q 22,20.5 20.5,20.5 L 5.5,20.5 Q 4,20.5 4,19 Z"
+                              StrokeLineJoin="Round">
+                            <Path.Fill><SolidColorBrush Color="{Binding IconColor}"/></Path.Fill>
+                        </Path>
+                    </Canvas>
+                </Viewbox>
+                <Viewbox x:Name="Folder" Visibility="Collapsed">
+                    <Canvas Width="26" Height="26">
+                        <Path Data="M 2,7 Q 2,4 5,4 L 10,4 Q 11.2,4 12,5 L 13.1,6.3 21,6.3 Q 24,6.3 24,9.3 L 24,19 Q 24,22 21,22 L 5,22 Q 2,22 2,19 Z"
+                              Fill="{DynamicResource FolderBack}"/>
+                        <Rectangle Canvas.Left="2" Canvas.Top="8.2" Width="22" Height="14" RadiusX="3.1" RadiusY="3.1">
+                            <Rectangle.Fill>
+                                <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
+                                    <GradientStop Color="{DynamicResource FolderTop}" Offset="0"/>
+                                    <GradientStop Color="{DynamicResource FolderBottom}" Offset="1"/>
+                                </LinearGradientBrush>
+                            </Rectangle.Fill>
+                        </Rectangle>
+                    </Canvas>
+                </Viewbox>
+            </Grid>
+            <DataTemplate.Triggers>
+                <DataTrigger Binding="{Binding IsDirectory}" Value="True">
+                    <Setter TargetName="Paper" Property="Visibility" Value="Collapsed"/>
+                    <Setter TargetName="Folder" Property="Visibility" Value="Visible"/>
+                </DataTrigger>
+                <DataTrigger Binding="{Binding IsImage}" Value="True">
+                    <Setter TargetName="Paper" Property="Visibility" Value="Collapsed"/>
+                    <Setter TargetName="Photo" Property="Visibility" Value="Visible"/>
+                </DataTrigger>
+            </DataTemplate.Triggers>
+        </DataTemplate>
+    </Window.Resources>
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+        <Border Background="{DynamicResource Chrome}" BorderBrush="{DynamicResource Edge}" BorderThickness="0,0,0,1">
+            <Grid Margin="12,10,12,0">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="242"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                <DockPanel Grid.Column="1" HorizontalAlignment="Left" KeyboardNavigation.TabNavigation="Local">
+                    <Button x:Name="NewTabButton" DockPanel.Dock="Right" Content="＋" ToolTip="新建标签页 (Ctrl+T)"
+                            AutomationProperties.Name="新建标签页" Click="NewTabClick" Margin="4,0,0,5"
+                            Width="34" Height="30" Padding="3" VerticalAlignment="Top" TabIndex="1"/>
+                    <ScrollViewer HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Disabled" Focusable="False" TabIndex="0">
+                        <TabControl x:Name="Tabs" SelectionChanged="ChangeTab" Background="Transparent" BorderThickness="0">
+                            <TabControl.Template>
+                                <ControlTemplate TargetType="TabControl">
+                                    <TabPanel IsItemsHost="True"/>
+                                </ControlTemplate>
+                            </TabControl.Template>
+                        </TabControl>
+                    </ScrollViewer>
+                </DockPanel>
+                <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Top" Margin="8,0,0,5">
+                    <Button x:Name="QuickSearchButton" Height="30" Click="QuickSearchClick" Style="{StaticResource PrimaryActionButton}"
+                            ToolTip="用 Everything 搜索各磁盘和网络共享中已建立索引的位置" AutomationProperties.Name="跨盘搜索">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="&#xE774;" FontFamily="Segoe MDL2 Assets" VerticalAlignment="Center"/>
+                            <TextBlock Text="跨盘搜索" Margin="6,0,0,0" VerticalAlignment="Center"/>
+                        </StackPanel>
+                    </Button>
+                    <Button x:Name="SettingsButton" Content="&#xE713;" Click="OpenSettings" Width="34" Height="30" Padding="3"
+                            Margin="4,0,0,0" FontFamily="Segoe MDL2 Assets" Style="{StaticResource ToolbarButton}"
+                            AutomationProperties.Name="设置" ToolTip="设置"/>
+                </StackPanel>
+            </Grid>
+        </Border>
+
+        <Grid Grid.Row="1">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="242"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
+            <Border Background="{DynamicResource Sidebar}" BorderBrush="{DynamicResource Edge}" BorderThickness="0,0,1,0">
+                <DockPanel Margin="12,13,12,12" LastChildFill="True">
+                    <Grid DockPanel.Dock="Bottom" Margin="4,8,4,3">
+                        <Border Style="{StaticResource SidebarCardSurface}"/>
+                        <Grid Margin="7,8,7,7">
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                            </Grid.RowDefinitions>
+                            <DockPanel Margin="6,0,0,8">
+                                <Button DockPanel.Dock="Right" Content="＋" ToolTip="固定当前文件夹"
+                                        AutomationProperties.Name="固定当前文件夹" Click="PinCurrentClick" Width="29" Height="26" Padding="2"/>
+                                <TextBlock Text="经常访问" Style="{StaticResource SidebarSectionTitle}"/>
+                            </DockPanel>
+                            <ScrollViewer Grid.Row="1" MaxHeight="230" VerticalScrollBarVisibility="Auto">
+                                <StackPanel x:Name="PinsPanel"/>
+                            </ScrollViewer>
+                        </Grid>
+                    </Grid>
+                    <ScrollViewer VerticalScrollBarVisibility="Auto">
+                        <StackPanel>
+                            <Grid Margin="4,3,4,9">
+                                <Border Style="{StaticResource SidebarCardSurface}"/>
+                                <StackPanel Margin="6,7">
+                                    <TextBlock Text="常用位置" Style="{StaticResource SidebarSectionTitle}" Margin="7,3,0,5"/>
+                                    <StackPanel x:Name="PlacesPanel"/>
+                                </StackPanel>
+                            </Grid>
+                            <Grid Margin="4,0,4,8">
+                                <Border Style="{StaticResource SidebarCardSurface}"/>
+                                <StackPanel Margin="6,7">
+                                    <TextBlock Text="驱动器" Style="{StaticResource SidebarSectionTitle}" Margin="7,3,0,5"/>
+                                    <ItemsControl x:Name="SidebarDrives">
+                                        <ItemsControl.ItemTemplate>
+                                            <DataTemplate>
+                                                <Button Style="{StaticResource LocationButton}" Background="Transparent" Click="OpenSidebarDrive"
+                                                        ToolTip="{Binding CapacityText}" AutomationProperties.Name="{Binding Label}">
+                                                    <DockPanel>
+                                                        <TextBlock DockPanel.Dock="Right" Text="{Binding UsageText}" Width="34" Margin="6,0,0,0"
+                                                                   TextAlignment="Right" VerticalAlignment="Center" FontSize="11" Foreground="{DynamicResource Muted}"/>
+                                                        <ProgressBar DockPanel.Dock="Right" Minimum="0" Maximum="100" Value="{Binding UsedPercent, Mode=OneWay}"
+                                                                     Width="42" Height="11" IsHitTestVisible="False" AutomationProperties.Name="已用容量">
+                                                            <ProgressBar.Template>
+                                                                <ControlTemplate TargetType="ProgressBar">
+                                                                    <DockPanel>
+                                                                        <Border DockPanel.Dock="Right" Width="2" Height="5" CornerRadius="0,1,1,0"
+                                                                                Background="{DynamicResource GaugeOutline}" VerticalAlignment="Center"/>
+                                                                        <Border BorderBrush="{DynamicResource GaugeOutline}" BorderThickness="1" Padding="1" CornerRadius="3" Background="{DynamicResource GaugeTrack}">
+                                                                            <Grid x:Name="PART_Track">
+                                                                                <Border x:Name="PART_Indicator" HorizontalAlignment="Left" CornerRadius="1.5"
+                                                                                        Background="{DynamicResource Accent}"/>
+                                                                            </Grid>
+                                                                        </Border>
+                                                                    </DockPanel>
+                                                                </ControlTemplate>
+                                                            </ProgressBar.Template>
+                                                        </ProgressBar>
+                                                        <TextBlock DockPanel.Dock="Left" Text="&#xEDA2;" FontFamily="Segoe MDL2 Assets" Foreground="{DynamicResource Accent}"
+                                                                   Margin="0,0,8,0" VerticalAlignment="Center"/>
+                                                        <TextBlock Text="{Binding Label}" VerticalAlignment="Center"/>
+                                                    </DockPanel>
+                                                </Button>
+                                            </DataTemplate>
+                                        </ItemsControl.ItemTemplate>
+                                    </ItemsControl>
+                                </StackPanel>
+                            </Grid>
+                        </StackPanel>
+                    </ScrollViewer>
+                </DockPanel>
+            </Border>
+
+            <Grid x:Name="FolderPage" Grid.Column="1" Margin="14,12,14,12">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="*"/>
+                </Grid.RowDefinitions>
+                <Grid Margin="0,0,0,10" Height="36">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+                    <Border Background="{DynamicResource Panel}" CornerRadius="10" BorderBrush="{DynamicResource Edge}" BorderThickness="1" Padding="2">
+                        <StackPanel Orientation="Horizontal">
+                            <Button x:Name="BackButton" Content="&#xE72B;" ToolTip="后退 (Alt+←)" AutomationProperties.Name="后退"
+                                    Click="BackClick" Width="32" FontFamily="Segoe MDL2 Assets" Style="{StaticResource ToolbarButton}"/>
+                            <Button x:Name="ForwardButton" Content="&#xE72A;" ToolTip="前进 (Alt+→)" AutomationProperties.Name="前进"
+                                    Click="ForwardClick" Width="32" FontFamily="Segoe MDL2 Assets" Style="{StaticResource ToolbarButton}"/>
+                            <Button x:Name="UpButton" Content="&#xE70E;" ToolTip="上一级 (Alt+↑)" AutomationProperties.Name="上一级"
+                                    Click="UpClick" Width="32" FontFamily="Segoe MDL2 Assets" Style="{StaticResource ToolbarButton}"/>
+                            <Button Content="&#xE72C;" ToolTip="刷新 (F5)" AutomationProperties.Name="刷新"
+                                    Click="RefreshClick" Width="32" FontFamily="Segoe MDL2 Assets" Style="{StaticResource ToolbarButton}"/>
+                        </StackPanel>
+                    </Border>
+                    <Border Grid.Column="1" Margin="8,0" Padding="4,2" CornerRadius="10" BorderThickness="1"
+                            BorderBrush="{DynamicResource Edge}" Background="{DynamicResource Field}">
+                        <Grid>
+                            <Grid x:Name="AddressTrail">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Text="&#xE8B7;" FontFamily="Segoe MDL2 Assets" Foreground="{DynamicResource Accent}"
+                                           FontSize="14" VerticalAlignment="Center" Margin="7,0,4,0"/>
+                                <Grid x:Name="BreadcrumbViewport" Grid.Column="1" ClipToBounds="True" SizeChanged="BreadcrumbSizeChanged">
+                                    <Button Focusable="False" Click="EditAddressClick" Style="{StaticResource ToolbarButton}" ToolTip="点击空白处输入路径"/>
+                                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Left">
+                                        <Button x:Name="BreadcrumbMore" Content="…" AutomationProperties.Name="上级路径"
+                                                ToolTip="显示上级路径" Style="{StaticResource PathButton}" Visibility="Collapsed"
+                                                Click="OpenHiddenBreadcrumbs"/>
+                                        <StackPanel x:Name="BreadcrumbItems" Orientation="Horizontal"/>
+                                    </StackPanel>
+                                </Grid>
+                                <Button Grid.Column="2" Content="&#xE70F;" Width="30" Click="EditAddressClick" ToolTip="输入路径 (Ctrl+L)"
+                                        AutomationProperties.Name="编辑路径" FontFamily="Segoe MDL2 Assets" Style="{StaticResource ToolbarButton}"/>
+                            </Grid>
+                            <TextBox x:Name="AddressBox" Visibility="Collapsed" AutomationProperties.Name="地址栏"
+                                     Background="Transparent" BorderThickness="0" ToolTip="回车打开，Esc 取消"
+                                     KeyDown="AddressKey" LostKeyboardFocus="AddressLostFocus"/>
+                        </Grid>
+                    </Border>
+                    <Border x:Name="FolderSearch" Grid.Column="2" Width="194" CornerRadius="7" Padding="3,2" BorderThickness="1"
+                            BorderBrush="{DynamicResource Edge}" Background="{DynamicResource Field}">
+                        <DockPanel>
+                            <Button DockPanel.Dock="Right" Content="&#xE721;" AutomationProperties.Name="搜索当前目录" ToolTip="搜索当前目录及子目录 (Ctrl+F)"
+                                    FontFamily="Segoe MDL2 Assets" Style="{StaticResource ToolbarButton}" Click="SearchClick" Width="28"/>
+                            <Grid>
+                                <TextBox x:Name="SearchBox" AutomationProperties.Name="搜索当前目录及子目录"
+                                         ToolTip="搜索当前目录及子目录" Background="Transparent" BorderThickness="0" KeyDown="SearchKey"/>
+                                <TextBlock x:Name="FolderSearchHint" Text="搜索当前目录" Foreground="{DynamicResource Muted}"
+                                           Margin="9,0,0,0" VerticalAlignment="Center" IsHitTestVisible="False">
+                                    <TextBlock.Style>
+                                        <Style TargetType="TextBlock">
+                                            <Setter Property="Visibility" Value="Collapsed"/>
+                                            <Style.Triggers>
+                                                <MultiDataTrigger>
+                                                    <MultiDataTrigger.Conditions>
+                                                        <Condition Binding="{Binding Text, ElementName=SearchBox}" Value=""/>
+                                                        <Condition Binding="{Binding IsKeyboardFocusWithin, ElementName=SearchBox}" Value="False"/>
+                                                    </MultiDataTrigger.Conditions>
+                                                    <Setter Property="Visibility" Value="Visible"/>
+                                                </MultiDataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </TextBlock.Style>
+                                </TextBlock>
+                            </Grid>
+                        </DockPanel>
+                    </Border>
+                </Grid>
+
+                <DockPanel Grid.Row="1" Margin="0,0,0,10">
+                    <CheckBox DockPanel.Dock="Right" Content="隐藏文件" ToolTip="勾选后显示隐藏文件和系统文件" x:Name="HiddenToggle"
+                              Foreground="{DynamicResource Muted}" VerticalContentAlignment="Center" Click="HiddenClick"/>
+                    <Border x:Name="FileViewOptions" DockPanel.Dock="Right" VerticalAlignment="Center" Background="{DynamicResource ToolbarSurface}" Padding="2"
+                            CornerRadius="8" Margin="0,0,15,0">
+                        <StackPanel Orientation="Horizontal">
+                            <Button x:Name="SortMenuButton" Click="SortMenuClick" ToolTip="更改排序方式" AutomationProperties.Name="排序"
+                                    Style="{StaticResource ToolbarButton}">
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock Text="&#xE8CB;" FontFamily="Segoe MDL2 Assets" Foreground="{DynamicResource Accent}" VerticalAlignment="Center"/>
+                                    <TextBlock Text="排序" Margin="5,0,5,0"/>
+                                    <TextBlock Text="&#xE70D;" FontFamily="Segoe MDL2 Assets" Foreground="{DynamicResource Muted}" FontSize="8" VerticalAlignment="Center"/>
+                                </StackPanel>
+                            </Button>
+                            <Button x:Name="ViewMenuButton" Click="ViewMenuClick" ToolTip="切换视图和调整图标大小" AutomationProperties.Name="视图"
+                                    Style="{StaticResource ToolbarButton}">
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock Text="&#xE8A9;" FontFamily="Segoe MDL2 Assets" Foreground="{DynamicResource Accent}" VerticalAlignment="Center"/>
+                                    <TextBlock Text="视图" Margin="5,0,5,0"/>
+                                    <TextBlock Text="&#xE70D;" FontFamily="Segoe MDL2 Assets" Foreground="{DynamicResource Muted}" FontSize="8" VerticalAlignment="Center"/>
+                                </StackPanel>
+                            </Button>
+                        </StackPanel>
+                    </Border>
+                    <StackPanel x:Name="FileActions" Orientation="Horizontal">
+                        <Button Click="NewFolderClick" Margin="0,0,5,0" AutomationProperties.Name="新建文件夹">
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Text="&#xE8F4;" FontFamily="Segoe MDL2 Assets" Foreground="{DynamicResource Accent}" VerticalAlignment="Center"/>
+                                <TextBlock Text="新建文件夹" Margin="6,0,0,0" VerticalAlignment="Center"/>
+                            </StackPanel>
+                        </Button>
+                        <Button Content="复制" Click="CopyClick" Style="{StaticResource ToolbarButton}" Margin="0,0,4,0"/>
+                        <Button Content="粘贴" Click="PasteClick" Style="{StaticResource ToolbarButton}" Margin="0,0,4,0"/>
+                        <Button Content="在资源管理器中打开" Click="ExplorerClick" Style="{StaticResource ToolbarButton}"/>
+                    </StackPanel>
+                </DockPanel>
+
+                <Grid Grid.Row="2">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition x:Name="FileColumn" Width="3.1*" MinWidth="310"/>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition x:Name="PreviewColumn" Width="0"/>
+                    </Grid.ColumnDefinitions>
+                    <Border x:Name="FileListPane" Background="{DynamicResource Panel}" BorderBrush="{DynamicResource Edge}" BorderThickness="1" CornerRadius="12" Padding="4">
+                        <ListView x:Name="FileList" Background="Transparent" BorderThickness="0" Foreground="{DynamicResource Text}"
+                                  SelectionMode="Extended" SelectionChanged="FileSelectionChanged"
+                                  MouseDoubleClick="OpenDoubleClick" PreviewMouseRightButtonDown="SelectRightClick"
+                                  ContextMenuOpening="PrepareMenu" GridViewColumnHeader.Click="SortFiles" SizeChanged="FileListResized"
+                                  VirtualizingPanel.IsVirtualizing="True" VirtualizingPanel.VirtualizationMode="Recycling"
+                                  ScrollViewer.CanContentScroll="True" AllowDrop="True" DragOver="FileDragOver" Drop="FileDrop"
+                                  PreviewMouseLeftButtonDown="BeginDrag" PreviewMouseMove="DragFiles">
+                            <ListView.View>
+                                <GridView>
+                                    <GridViewColumn Header="名称" Width="270">
+                                        <GridViewColumn.CellTemplate>
+                                            <DataTemplate>
+                                                <Grid Margin="3,0,3,0">
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="Auto"/>
+                                                        <ColumnDefinition Width="Auto"/>
+                                                        <ColumnDefinition Width="*"/>
+                                                    </Grid.ColumnDefinitions>
+                                                    <Grid Width="{DynamicResource FileIconSize}" Height="{DynamicResource FileIconSize}" Margin="0,0,7,0"
+                                                          IsHitTestVisible="False">
+                                                        <local:FileThumbnail x:Name="Thumbnail" Active="{DynamicResource ShowFileThumbnails}" Stretch="Uniform"/>
+                                                        <Border BorderThickness="1" CornerRadius="3">
+                                                            <Border.BorderBrush><SolidColorBrush Color="{Binding IconColor}"/></Border.BorderBrush>
+                                                            <Border.Style>
+                                                                <Style TargetType="Border">
+                                                                    <Style.Triggers>
+                                                                        <DataTrigger Binding="{Binding IsShortcut}" Value="True">
+                                                                            <Setter Property="Visibility" Value="Collapsed"/>
+                                                                        </DataTrigger>
+                                                                        <DataTrigger Binding="{Binding Source, ElementName=Thumbnail}" Value="{x:Null}">
+                                                                            <Setter Property="Visibility" Value="Collapsed"/>
+                                                                        </DataTrigger>
+                                                                    </Style.Triggers>
+                                                                </Style>
+                                                            </Border.Style>
+                                                        </Border>
+                                                        <Viewbox>
+                                                            <Viewbox.Style>
+                                                                <Style TargetType="Viewbox">
+                                                                    <Setter Property="Visibility" Value="Collapsed"/>
+                                                                    <Style.Triggers>
+                                                                        <DataTrigger Binding="{Binding Source, ElementName=Thumbnail}" Value="{x:Null}">
+                                                                            <Setter Property="Visibility" Value="Visible"/>
+                                                                        </DataTrigger>
+                                                                    </Style.Triggers>
+                                                                </Style>
+                                                            </Viewbox.Style>
+                                                            <ContentPresenter Content="{Binding}" ContentTemplate="{StaticResource FileIcon}"/>
+                                                        </Viewbox>
+                                                    </Grid>
+                                                    <Ellipse x:Name="ColorDot" Grid.Column="1" Fill="{Binding TagColor}" Width="9" Height="9"
+                                                             VerticalAlignment="Center" Margin="0,0,7,0" ToolTip="颜色标签"/>
+                                                    <TextBlock Grid.Column="2" Text="{Binding Name}" ToolTip="{Binding FullPath}"
+                                                               TextTrimming="CharacterEllipsis" VerticalAlignment="Center"
+                                                               PreviewMouseLeftButtonDown="FileNamePressed" PreviewMouseLeftButtonUp="FileNameReleased"/>
+                                                    <TextBox Grid.Column="2" Visibility="Collapsed" VerticalAlignment="Center" Padding="3,1"
+                                                             MinWidth="36" AutomationProperties.Name="重命名"
+                                                             KeyDown="InlineNameKey" LostKeyboardFocus="InlineNameLostFocus" Unloaded="InlineNameUnloaded"/>
+                                                </Grid>
+                                                <DataTemplate.Triggers>
+                                                    <DataTrigger Binding="{Binding TagColor}" Value="{x:Null}">
+                                                        <Setter TargetName="ColorDot" Property="Visibility" Value="Collapsed"/>
+                                                    </DataTrigger>
+                                                </DataTemplate.Triggers>
+                                            </DataTemplate>
+                                        </GridViewColumn.CellTemplate>
+                                    </GridViewColumn>
+                                    <GridViewColumn Header="修改日期" Width="133" DisplayMemberBinding="{Binding UpdatedText}"/>
+                                    <GridViewColumn Header="{x:Static local:MainWindow.ModifiedAgeHeader}" Width="102">
+                                        <GridViewColumn.CellTemplate>
+                                            <DataTemplate>
+                                                <Border CornerRadius="4" Padding="7,2" MinWidth="76" HorizontalAlignment="Left">
+                                                    <Border.DataContext>
+                                                        <MultiBinding Converter="{StaticResource FileAgeConverter}" Mode="OneWay">
+                                                            <Binding Path="Updated"/>
+                                                            <Binding Path="FileAgeNow" RelativeSource="{RelativeSource AncestorType={x:Type local:MainWindow}}"/>
+                                                        </MultiBinding>
+                                                    </Border.DataContext>
+                                                    <Border.Style>
+                                                        <Style TargetType="Border">
+                                                            <Setter Property="Background" Value="{DynamicResource Field}"/>
+                                                            <Setter Property="TextElement.Foreground" Value="{DynamicResource Muted}"/>
+                                                            <Style.Triggers>
+                                                                <DataTrigger Binding="{Binding Band}" Value="Recent">
+                                                                    <Setter Property="Background" Value="{DynamicResource AgeRecentBackground}"/>
+                                                                    <Setter Property="TextElement.Foreground" Value="{DynamicResource AgeRecentText}"/>
+                                                                </DataTrigger>
+                                                                <DataTrigger Binding="{Binding Band}" Value="Day">
+                                                                    <Setter Property="Background" Value="{DynamicResource AgeDayBackground}"/>
+                                                                    <Setter Property="TextElement.Foreground" Value="{DynamicResource AgeDayText}"/>
+                                                                </DataTrigger>
+                                                                <DataTrigger Binding="{Binding Band}" Value="Week">
+                                                                    <Setter Property="Background" Value="{DynamicResource AgeWeekBackground}"/>
+                                                                    <Setter Property="TextElement.Foreground" Value="{DynamicResource AgeWeekText}"/>
+                                                                </DataTrigger>
+                                                                <DataTrigger Binding="{Binding Band}" Value="Month">
+                                                                    <Setter Property="Background" Value="{DynamicResource AgeMonthBackground}"/>
+                                                                    <Setter Property="TextElement.Foreground" Value="{DynamicResource AgeMonthText}"/>
+                                                                </DataTrigger>
+                                                            </Style.Triggers>
+                                                        </Style>
+                                                    </Border.Style>
+                                                    <TextBlock Text="{Binding Text}" FontSize="12" TextAlignment="Center"/>
+                                                </Border>
+                                            </DataTemplate>
+                                        </GridViewColumn.CellTemplate>
+                                    </GridViewColumn>
+                                    <GridViewColumn Header="类型" Width="82" DisplayMemberBinding="{Binding Type}"/>
+                                    <GridViewColumn Header="大小" Width="85" DisplayMemberBinding="{Binding Size}"/>
+                                </GridView>
+                            </ListView.View>
+                        </ListView>
+                    </Border>
+                    <Border x:Name="DrivePage" Visibility="Collapsed" Background="{DynamicResource Panel}" BorderBrush="{DynamicResource Edge}"
+                            BorderThickness="1" CornerRadius="10" Padding="12">
+                        <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+                            <StackPanel>
+                                <TextBlock Text="设备和驱动器" Foreground="{DynamicResource Muted}"
+                                           FontWeight="SemiBold" Margin="4,0,0,8"/>
+                                <ListBox x:Name="DriveList" Background="Transparent" BorderThickness="0" Foreground="{DynamicResource Text}"
+                                         AutomationProperties.Name="设备和驱动器" MouseDoubleClick="OpenDriveDoubleClick"
+                                         ScrollViewer.HorizontalScrollBarVisibility="Disabled" ScrollViewer.VerticalScrollBarVisibility="Disabled">
+                                    <ListBox.ItemsPanel>
+                                        <ItemsPanelTemplate><WrapPanel/></ItemsPanelTemplate>
+                                    </ListBox.ItemsPanel>
+                                    <ListBox.ItemContainerStyle>
+                                        <Style TargetType="ListBoxItem">
+                                            <Setter Property="Margin" Value="3"/>
+                                            <Setter Property="Background" Value="{DynamicResource OverviewTile}"/>
+                                            <Setter Property="Template">
+                                                <Setter.Value>
+                                                    <ControlTemplate TargetType="ListBoxItem">
+                                                        <Border x:Name="Tile" Background="{TemplateBinding Background}" CornerRadius="8"
+                                                                BorderBrush="{DynamicResource Edge}" BorderThickness="1" Padding="12,9">
+                                                            <ContentPresenter/>
+                                                        </Border>
+                                                        <ControlTemplate.Triggers>
+                                                            <Trigger Property="IsMouseOver" Value="True">
+                                                                <Setter TargetName="Tile" Property="Background" Value="{DynamicResource Hover}"/>
+                                                            </Trigger>
+                                                            <Trigger Property="IsSelected" Value="True">
+                                                                <Setter TargetName="Tile" Property="Background" Value="{DynamicResource Selected}"/>
+                                                                <Setter TargetName="Tile" Property="BorderBrush" Value="{DynamicResource FocusEdge}"/>
+                                                            </Trigger>
+                                                        </ControlTemplate.Triggers>
+                                                    </ControlTemplate>
+                                                </Setter.Value>
+                                            </Setter>
+                                        </Style>
+                                    </ListBox.ItemContainerStyle>
+                                    <ListBox.ItemTemplate>
+                                        <DataTemplate>
+                                            <StackPanel Orientation="Horizontal" Width="172" MinHeight="52" ToolTip="{Binding Path}">
+                                                <TextBlock Text="&#xEDA2;" FontFamily="Segoe MDL2 Assets" FontSize="36"
+                                                           Foreground="{DynamicResource Accent}" VerticalAlignment="Center"/>
+                                                <StackPanel Margin="12,0,0,0" VerticalAlignment="Center">
+                                                    <TextBlock Text="{Binding Label}" FontSize="14" FontWeight="SemiBold"/>
+                                                    <TextBlock Text="{Binding CapacityText}" Foreground="{DynamicResource Muted}" FontSize="12" Margin="0,3,0,0"/>
+                                                </StackPanel>
+                                            </StackPanel>
+                                        </DataTemplate>
+                                    </ListBox.ItemTemplate>
+                                </ListBox>
+                                <StackPanel x:Name="OverviewPinsSection" Visibility="Collapsed" Margin="0,18,0,0">
+                                    <TextBlock Text="经常访问" Foreground="{DynamicResource Muted}" FontWeight="SemiBold" Margin="4,0,0,8"/>
+                                    <WrapPanel x:Name="OverviewPinsPanel" ItemWidth="218" Margin="3,0,0,0"/>
+                                </StackPanel>
+                            </StackPanel>
+                        </ScrollViewer>
+                    </Border>
+                    <GridSplitter x:Name="PreviewSplitter" Grid.Column="1" Width="10" Cursor="SizeWE" Visibility="Collapsed"
+                                  HorizontalAlignment="Stretch" VerticalAlignment="Stretch"
+                                  ResizeDirection="Columns" ResizeBehavior="PreviousAndNext" KeyboardIncrement="12"
+                                  ToolTip="拖动调整文件列表和预览的宽度"
+                                  AutomationProperties.Name="调整文件列表和预览的宽度" FocusVisualStyle="{x:Null}">
+                        <GridSplitter.Template>
+                            <ControlTemplate TargetType="GridSplitter">
+                                <Grid Background="Transparent">
+                                    <Border x:Name="Grip" Width="3" Height="36" CornerRadius="1.5" Background="{DynamicResource Grip}"
+                                            HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                </Grid>
+                                <ControlTemplate.Triggers>
+                                    <Trigger Property="IsMouseOver" Value="True">
+                                        <Setter TargetName="Grip" Property="Background" Value="{DynamicResource Accent}"/>
+                                    </Trigger>
+                                    <Trigger Property="IsDragging" Value="True">
+                                        <Setter TargetName="Grip" Property="Background" Value="{DynamicResource Accent}"/>
+                                    </Trigger>
+                                    <Trigger Property="IsKeyboardFocused" Value="True">
+                                        <Setter TargetName="Grip" Property="Background" Value="{DynamicResource Accent}"/>
+                                    </Trigger>
+                                </ControlTemplate.Triggers>
+                            </ControlTemplate>
+                        </GridSplitter.Template>
+                    </GridSplitter>
+                    <Border x:Name="PreviewPane" Grid.Column="2" Visibility="Collapsed" Background="{DynamicResource Panel}"
+                            CornerRadius="10" BorderBrush="{DynamicResource Edge}" BorderThickness="1" Padding="12">
+                        <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="*"/>
+                                <RowDefinition Height="Auto"/>
+                            </Grid.RowDefinitions>
+                            <DockPanel Height="23" Margin="0,0,0,8">
+                                <Button x:Name="PreviewZoomButton" DockPanel.Dock="Right" Content="适应" Visibility="Collapsed"
+                                        Style="{StaticResource ToolbarButton}" Padding="5,2" FontSize="11" Click="ResetPreviewClick"
+                                        ToolTip="还原适应窗口。滚轮缩放，拖动查看"/>
+                                <TextBlock Text="预览" FontWeight="SemiBold" Foreground="{DynamicResource Muted}" VerticalAlignment="Center"/>
+                            </DockPanel>
+                            <Border Grid.Row="1" Background="{DynamicResource Field}" CornerRadius="8" ClipToBounds="True">
+                                <Grid>
+                                    <ScrollViewer x:Name="PreviewViewport" HorizontalScrollBarVisibility="Hidden" VerticalScrollBarVisibility="Hidden"
+                                                  Focusable="False" SizeChanged="PreviewViewportResized" PreviewMouseWheel="PreviewWheel"
+                                                  PreviewMouseLeftButtonDown="StartPreviewDrag" PreviewMouseLeftButtonUp="StopPreviewDrag"
+                                                  PreviewMouseMove="MovePreviewDrag" LostMouseCapture="PreviewDragCaptureLost"
+                                                  MouseLeave="LeavePreview" ScrollChanged="PreviewGeometryChanged">
+                                        <Grid x:Name="PreviewCanvas" Background="Transparent">
+                                            <Image x:Name="PreviewImage" Stretch="Uniform" HorizontalAlignment="Center" VerticalAlignment="Center"
+                                                   SizeChanged="PreviewGeometryChanged"/>
+                                        </Grid>
+                                    </ScrollViewer>
+                                    <TextBlock x:Name="PreviewHint" Text="正在加载图片…" Foreground="{DynamicResource Muted}" IsHitTestVisible="False"
+                                               TextWrapping="Wrap" Margin="10" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                </Grid>
+                            </Border>
+                            <StackPanel Grid.Row="2" Margin="0,10,0,0">
+                                <TextBlock x:Name="PreviewName" FontWeight="SemiBold" TextTrimming="CharacterEllipsis"/>
+                                <TextBlock x:Name="PreviewDetails" Foreground="{DynamicResource Muted}" TextWrapping="Wrap" Margin="0,4,0,0"/>
+                                <StackPanel x:Name="PreviewPixelStatus" Visibility="Hidden" Height="34" Margin="0,6,0,0">
+                                    <TextBlock x:Name="PreviewCoordinates" FontSize="11" Foreground="{DynamicResource Muted}"/>
+                                    <TextBlock x:Name="PreviewPixelValue" FontSize="11" Foreground="{DynamicResource Muted}"/>
+                                </StackPanel>
+                            </StackPanel>
+                        </Grid>
+                    </Border>
+                </Grid>
+            </Grid>
+            <Grid x:Name="QuickSearchPage" Grid.Column="1" Margin="14,12,14,12" Visibility="Collapsed">
+                <Grid.Resources>
+                    <Style x:Key="SearchScopeItem" TargetType="ComboBoxItem">
+                        <Setter Property="Foreground" Value="{DynamicResource Text}"/>
+                        <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
+                        <Setter Property="Template">
+                            <Setter.Value>
+                                <ControlTemplate TargetType="ComboBoxItem">
+                                    <Border x:Name="Option" Background="Transparent" CornerRadius="6" Padding="8,6">
+                                        <DockPanel>
+                                            <TextBlock x:Name="CheckMark" DockPanel.Dock="Left" Text="&#xE73E;" FontFamily="Segoe MDL2 Assets"
+                                                       Foreground="{DynamicResource Accent}" Width="20" VerticalAlignment="Center" Visibility="Hidden"/>
+                                            <ContentPresenter VerticalAlignment="Center"/>
+                                        </DockPanel>
+                                    </Border>
+                                    <ControlTemplate.Triggers>
+                                        <Trigger Property="IsSelected" Value="True">
+                                            <Setter TargetName="Option" Property="Background" Value="{DynamicResource Selected}"/>
+                                            <Setter TargetName="CheckMark" Property="Visibility" Value="Visible"/>
+                                        </Trigger>
+                                        <Trigger Property="IsHighlighted" Value="True">
+                                            <Setter TargetName="Option" Property="Background" Value="{DynamicResource ButtonHover}"/>
+                                        </Trigger>
+                                    </ControlTemplate.Triggers>
+                                </ControlTemplate>
+                            </Setter.Value>
+                        </Setter>
+                    </Style>
+                    <Style x:Key="SearchScopeSelector" TargetType="ComboBox">
+                        <Setter Property="Foreground" Value="{DynamicResource Text}"/>
+                        <Setter Property="Background" Value="{DynamicResource Field}"/>
+                        <Setter Property="BorderBrush" Value="{DynamicResource Edge}"/>
+                        <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
+                        <Setter Property="ItemContainerStyle" Value="{StaticResource SearchScopeItem}"/>
+                        <Setter Property="Template">
+                            <Setter.Value>
+                                <ControlTemplate TargetType="ComboBox">
+                                    <Grid>
+                                        <ToggleButton x:Name="ScopeToggle" Focusable="False" ClickMode="Press" Cursor="Hand"
+                                                      Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}"
+                                                      IsChecked="{Binding IsDropDownOpen, RelativeSource={RelativeSource TemplatedParent}, Mode=TwoWay}">
+                                            <ToggleButton.Template>
+                                                <ControlTemplate TargetType="ToggleButton">
+                                                    <Border Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}"
+                                                            BorderThickness="1" CornerRadius="8"/>
+                                                </ControlTemplate>
+                                            </ToggleButton.Template>
+                                        </ToggleButton>
+                                        <DockPanel Margin="10,0" IsHitTestVisible="False">
+                                            <TextBlock DockPanel.Dock="Left" Text="&#xE774;" FontFamily="Segoe MDL2 Assets"
+                                                       Foreground="{DynamicResource Accent}" Margin="0,0,7,0" VerticalAlignment="Center"/>
+                                            <TextBlock DockPanel.Dock="Right" Text="&#xE70D;" FontFamily="Segoe MDL2 Assets" FontSize="9"
+                                                       Foreground="{DynamicResource Muted}" Margin="7,0,0,0" VerticalAlignment="Center"/>
+                                            <ContentPresenter VerticalAlignment="Center" Content="{TemplateBinding SelectionBoxItem}"
+                                                              ContentTemplate="{TemplateBinding SelectionBoxItemTemplate}"
+                                                              ContentTemplateSelector="{TemplateBinding ItemTemplateSelector}"/>
+                                        </DockPanel>
+                                        <Popup x:Name="PART_Popup" IsOpen="{TemplateBinding IsDropDownOpen}" Placement="Bottom"
+                                               PlacementTarget="{Binding RelativeSource={RelativeSource TemplatedParent}}"
+                                               AllowsTransparency="True" PopupAnimation="Fade">
+                                            <Border Style="{StaticResource PopupSurface}" Margin="0,5,7,8"
+                                                    MinWidth="{Binding ActualWidth, RelativeSource={RelativeSource TemplatedParent}}">
+                                                <ScrollViewer VerticalScrollBarVisibility="Auto" MaxHeight="{TemplateBinding MaxDropDownHeight}">
+                                                    <ItemsPresenter/>
+                                                </ScrollViewer>
+                                            </Border>
+                                        </Popup>
+                                    </Grid>
+                                    <ControlTemplate.Triggers>
+                                        <Trigger Property="IsMouseOver" Value="True">
+                                            <Setter TargetName="ScopeToggle" Property="Background" Value="{DynamicResource Hover}"/>
+                                        </Trigger>
+                                        <Trigger Property="IsKeyboardFocusWithin" Value="True">
+                                            <Setter TargetName="ScopeToggle" Property="BorderBrush" Value="{DynamicResource FocusEdge}"/>
+                                        </Trigger>
+                                        <Trigger Property="IsDropDownOpen" Value="True">
+                                            <Setter TargetName="ScopeToggle" Property="Background" Value="{DynamicResource Selected}"/>
+                                            <Setter TargetName="ScopeToggle" Property="BorderBrush" Value="{DynamicResource FocusEdge}"/>
+                                        </Trigger>
+                                    </ControlTemplate.Triggers>
+                                </ControlTemplate>
+                            </Setter.Value>
+                        </Setter>
+                    </Style>
+                </Grid.Resources>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="*"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
+                <Border Background="{DynamicResource SearchSurface}" BorderBrush="{DynamicResource Edge}" BorderThickness="1"
+                        CornerRadius="12" Padding="16,12,16,14">
+                    <StackPanel>
+                        <DockPanel Margin="0,0,0,12">
+                            <TextBlock DockPanel.Dock="Right" Text="Everything 索引" FontSize="12" Foreground="{DynamicResource Muted}" VerticalAlignment="Center"/>
+                            <TextBlock Text="跨盘搜索" FontSize="20" FontWeight="SemiBold" VerticalAlignment="Center"/>
+                        </DockPanel>
+                        <DockPanel Height="40">
+                            <ComboBox x:Name="QuickScope" DockPanel.Dock="Right" MinWidth="176" Margin="8,0,0,0" MaxDropDownHeight="260"
+                                      Style="{StaticResource SearchScopeSelector}"
+                                      ToolTip="本地磁盘和已加入索引的网络位置" AutomationProperties.Name="搜索范围"
+                                      SelectionChanged="QuickFilterChanged" DisplayMemberPath="Label" SelectedValuePath="Path"/>
+                            <Border BorderThickness="1" Background="{DynamicResource Field}" CornerRadius="8" Padding="10,0">
+                                <Border.Style>
+                                    <Style TargetType="Border">
+                                        <Setter Property="BorderBrush" Value="{DynamicResource Edge}"/>
+                                        <Style.Triggers>
+                                            <Trigger Property="IsKeyboardFocusWithin" Value="True">
+                                                <Setter Property="BorderBrush" Value="{DynamicResource FocusEdge}"/>
+                                            </Trigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </Border.Style>
+                                <DockPanel>
+                                    <TextBlock DockPanel.Dock="Left" Text="&#xE721;" FontFamily="Segoe MDL2 Assets"
+                                               Foreground="{DynamicResource Accent}" VerticalAlignment="Center" Margin="0,0,7,0"/>
+                                    <Grid>
+                                        <TextBox x:Name="QuickQuery" Background="Transparent" BorderThickness="0" MaxLength="260" Padding="4,0"
+                                                 AutomationProperties.Name="搜索文件或文件夹名称" TextChanged="QuickQueryChanged" KeyDown="QuickQueryKey"/>
+                                        <TextBlock Text="搜索文件或文件夹名称" Foreground="{DynamicResource Muted}" IsHitTestVisible="False"
+                                                   VerticalAlignment="Center" Margin="4,0,0,0">
+                                            <TextBlock.Style>
+                                                <Style TargetType="TextBlock">
+                                                    <Setter Property="Visibility" Value="Collapsed"/>
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding Text, ElementName=QuickQuery}" Value="">
+                                                            <Setter Property="Visibility" Value="Visible"/>
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </TextBlock.Style>
+                                        </TextBlock>
+                                    </Grid>
+                                </DockPanel>
+                            </Border>
+                        </DockPanel>
+                    </StackPanel>
+                </Border>
+                <DockPanel Grid.Row="1" Margin="0,8,0,8">
+                    <Grid DockPanel.Dock="Right">
+                        <Button x:Name="LocateQuickResultButton" Click="LocateQuickResultClick" AutomationProperties.Name="打开所在文件夹">
+                            <Button.Style>
+                                <Style TargetType="Button" BasedOn="{StaticResource {x:Type Button}}">
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding SelectedItem, ElementName=QuickResults}" Value="{x:Null}">
+                                            <Setter Property="Visibility" Value="Hidden"/>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Button.Style>
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Text="&#xE838;" FontFamily="Segoe MDL2 Assets" Foreground="{DynamicResource Accent}" VerticalAlignment="Center"/>
+                                <TextBlock Text="打开所在文件夹" Margin="6,0,0,0" VerticalAlignment="Center"/>
+                            </StackPanel>
+                        </Button>
+                        <TextBlock Text="选中结果后可定位" FontSize="12" Foreground="{DynamicResource Muted}"
+                                   VerticalAlignment="Center" HorizontalAlignment="Right" Margin="0,0,4,0">
+                            <TextBlock.Style>
+                                <Style TargetType="TextBlock">
+                                    <Setter Property="Visibility" Value="Collapsed"/>
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding SelectedItem, ElementName=QuickResults}" Value="{x:Null}">
+                                            <Setter Property="Visibility" Value="Visible"/>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </TextBlock.Style>
+                        </TextBlock>
+                    </Grid>
+                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                        <StackPanel.Resources>
+                            <Style TargetType="RadioButton">
+                                <Setter Property="Foreground" Value="{DynamicResource Muted}"/>
+                                <Setter Property="Margin" Value="0,0,6,0"/>
+                                <Setter Property="Cursor" Value="Hand"/>
+                                <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
+                                <Setter Property="Template">
+                                    <Setter.Value>
+                                        <ControlTemplate TargetType="RadioButton">
+                                            <Border x:Name="Chip" CornerRadius="8" Padding="10,5" BorderThickness="1"
+                                                    BorderBrush="{DynamicResource Edge}" Background="{DynamicResource Panel}">
+                                                <ContentPresenter/>
+                                            </Border>
+                                            <ControlTemplate.Triggers>
+                                                <Trigger Property="IsMouseOver" Value="True">
+                                                    <Setter TargetName="Chip" Property="Background" Value="{DynamicResource ButtonHover}"/>
+                                                </Trigger>
+                                                <Trigger Property="IsChecked" Value="True">
+                                                    <Setter TargetName="Chip" Property="Background" Value="{DynamicResource Selected}"/>
+                                                    <Setter TargetName="Chip" Property="BorderBrush" Value="{DynamicResource ButtonEdge}"/>
+                                                    <Setter Property="Foreground" Value="{DynamicResource Accent}"/>
+                                                </Trigger>
+                                                <Trigger Property="IsKeyboardFocused" Value="True">
+                                                    <Setter TargetName="Chip" Property="BorderBrush" Value="{DynamicResource Accent}"/>
+                                                </Trigger>
+                                            </ControlTemplate.Triggers>
+                                        </ControlTemplate>
+                                    </Setter.Value>
+                                </Setter>
+                            </Style>
+                        </StackPanel.Resources>
+                        <RadioButton x:Name="QuickAllKinds" Content="全部" IsChecked="True" Checked="QuickKindChanged"/>
+                        <RadioButton x:Name="QuickFilesOnly" Content="文件" Checked="QuickKindChanged"/>
+                        <RadioButton x:Name="QuickFoldersOnly" Content="文件夹" Checked="QuickKindChanged"/>
+                    </StackPanel>
+                </DockPanel>
+                <Border Grid.Row="2" Background="{DynamicResource Panel}" BorderBrush="{DynamicResource Edge}" BorderThickness="1"
+                        CornerRadius="12" Padding="4">
+                    <ListView x:Name="QuickResults" Background="Transparent" BorderThickness="0" Foreground="{DynamicResource Text}"
+                              VirtualizingPanel.IsVirtualizing="True" VirtualizingPanel.VirtualizationMode="Recycling"
+                              ScrollViewer.CanContentScroll="True" ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                              AutomationProperties.Name="跨盘搜索结果" MouseDoubleClick="OpenQuickDoubleClick" KeyDown="QuickResultKey"
+                              SizeChanged="QuickResultsResized">
+                        <ListView.View>
+                            <GridView AllowsColumnReorder="False">
+                                <GridViewColumn x:Name="QuickNameColumn" Header="名称" Width="250">
+                                    <GridViewColumn.CellTemplate>
+                                        <DataTemplate>
+                                            <DockPanel Margin="2,0,0,0" ToolTip="{Binding FullPath}">
+                                                <TextBlock DockPanel.Dock="Left" Text="{Binding Glyph}" FontFamily="Segoe MDL2 Assets"
+                                                           Foreground="{DynamicResource Accent}" Margin="0,0,7,0" VerticalAlignment="Center"/>
+                                                <TextBlock Text="{Binding Name}" TextTrimming="CharacterEllipsis" VerticalAlignment="Center"/>
+                                            </DockPanel>
+                                        </DataTemplate>
+                                    </GridViewColumn.CellTemplate>
+                                </GridViewColumn>
+                                <GridViewColumn x:Name="QuickFolderColumn" Header="所在文件夹" Width="310">
+                                    <GridViewColumn.CellTemplate>
+                                        <DataTemplate>
+                                            <TextBlock Text="{Binding Folder}" ToolTip="{Binding Folder}" TextTrimming="CharacterEllipsis" VerticalAlignment="Center"/>
+                                        </DataTemplate>
+                                    </GridViewColumn.CellTemplate>
+                                </GridViewColumn>
+                                <GridViewColumn Header="修改日期" Width="136" DisplayMemberBinding="{Binding UpdatedText}"/>
+                                <GridViewColumn Header="大小" Width="78" DisplayMemberBinding="{Binding Size}"/>
+                            </GridView>
+                        </ListView.View>
+                    </ListView>
+                </Border>
+                <DockPanel Grid.Row="3" Margin="2,7,2,0" MinHeight="25">
+                    <Button x:Name="QuickMore" DockPanel.Dock="Right" Content="加载更多" Visibility="Collapsed" Click="QuickMoreClick"/>
+                    <TextBlock x:Name="QuickStatus" Text="输入文件名开始搜索。网络位置需先加入 Everything 索引。"
+                               TextWrapping="Wrap" Foreground="{DynamicResource Muted}" VerticalAlignment="Center"
+                               AutomationProperties.LiveSetting="Polite"/>
+                </DockPanel>
+            </Grid>
+        </Grid>
+
+        <Border Grid.Row="2" Background="{DynamicResource Chrome}" BorderBrush="{DynamicResource Edge}" BorderThickness="0,1,0,0" Padding="12,7">
+            <DockPanel>
+                <TextBlock x:Name="CountText" DockPanel.Dock="Right" Foreground="{DynamicResource Muted}" Margin="12,0,0,0"/>
+                <StackPanel x:Name="ArchiveProgressPanel" DockPanel.Dock="Left" Orientation="Horizontal" Visibility="Collapsed"
+                            VerticalAlignment="Center" Margin="0,0,10,0">
+                    <ProgressBar x:Name="ArchiveProgressBar" Width="116" Height="6" IsIndeterminate="False"
+                                 VerticalAlignment="Center" Foreground="{DynamicResource Accent}" Background="{DynamicResource GaugeTrack}"
+                                 BorderThickness="0" AutomationProperties.Name="归档进度"/>
+                    <Button x:Name="CancelArchiveButton" Content="取消" Click="CancelArchiveClick" MinWidth="48"
+                            Margin="7,0,0,0" Padding="8,2" Style="{StaticResource ToolbarButton}"/>
+                </StackPanel>
+                <TextBlock x:Name="StatusText" VerticalAlignment="Center" Foreground="{DynamicResource Accent}" TextTrimming="CharacterEllipsis"
+                           ToolTip="{Binding Text, RelativeSource={RelativeSource Self}}"/>
+            </DockPanel>
+        </Border>
+    </Grid>
+</Window>
+

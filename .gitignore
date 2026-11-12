@@ -11,6 +11,7 @@
 pins.json
 colors.json
 menu.json
+appearance.json
 win-e.enabled
 *.tmp
 

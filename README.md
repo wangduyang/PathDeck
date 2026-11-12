@@ -1,18 +1,37 @@
-# PathDeck
+# PathDeck · Windows 文件资源管理器
 
-PathDeck 是基于 C# 和 WPF 的 Windows 便携文件管理器。它提供单栏浏览、多标签页、可点击的地址栏和可调整宽度的图片预览，适合在多个目录间来回处理文件。
+PathDeck 是一款面向 Windows 的便携文件资源管理器，集成单栏多标签浏览、Everything 跨盘查找和图片检查，适合在项目目录、数据集和输出文件之间频繁切换。
 
-当前源码版本为 **0.5.23**。
+当前版本为 **1.0.1**。便携版可免费下载。
+
+## 下载并运行
+
+1. 从 [GitHub Releases](https://github.com/wangduyang/PathDeck/releases/tag/v1.0.1) 下载 `PathDeck-1.0.1-win-x64.zip`。
+2. 将 ZIP 完整解压到有写入权限的目录。
+3. 双击 `PathDeck.exe`。便携包内含 .NET 桌面运行时，可以直接启动。
+
+本次发布适用于 Windows x64，已在 Windows 11 x64 验证。「跨盘搜索」使用本机 Everything 的索引，需要另外安装并运行 Everything。「搜索当前目录」可以直接使用。
+
+## 同类文件资源管理器比较
+
+| 产品 | 下载或使用费用 | 适用场景 |
+| --- | --- | --- |
+| **PathDeck** | **便携版免费下载** | 单栏多标签、带自定义名称的固定目录、Everything 跨盘搜索。内置图像测距、像素读数及 NIfTI 分割叠加，适合浏览数据集和复核图像输出。 |
+| [Windows 文件资源管理器](https://support.microsoft.com/zh-cn/windows/experience/fileexplorer/file-explorer-in-windows) | 随 Windows 提供 | 日常文件管理、系统文件夹、Windows Search 和云文件访问。 |
+| [OneCommander](https://www.onecommander.com/) | [个人非商业使用免费，商业使用需购买 Pro](https://www.onecommander.com/pricing) | 多标签浏览、文件与文件夹预览。适合希望使用单栏或双栏来组织文件的用户。 |
+| [Double Commander](https://doublecmd.sourceforge.io/index.php?lang=eng) | 免费、开源 | 双栏文件管理、批量重命名和归档浏览。适合在两个目录之间批量处理文件。 |
+
+在 PathDeck 里，可以用跨盘搜索找到一组实验输出，打开所在目录，再按列表顺序翻图、读像素或查看分割标签。
 
 ## 运行与构建
 
-在 Windows 上运行。开发和发布需要 [.NET 9 SDK](https://dotnet.microsoft.com/download/dotnet/9.0)，运行下方生成的框架依赖版需要同架构的 .NET 9 **Desktop Runtime**。项目在 Windows 11 x64 上验证。归档功能使用 Windows 自带的 [tar.exe](https://learn.microsoft.com/windows/tar/)。
+开发和发布需要 [.NET 10 SDK](https://dotnet.microsoft.com/download/dotnet/10.0)。归档功能使用 Windows 自带的 [tar.exe](https://learn.microsoft.com/windows/tar/)。
 
 下载仓库或克隆后，在仓库根目录打开 PowerShell。
 
 ```powershell
-git clone https://github.com/wangduyang/1Commander.git
-cd 1Commander
+git clone https://github.com/wangduyang/PathDeck.git
+cd PathDeck
 dotnet build .\src\QuickFileDesk.csproj -c Release
 dotnet run --project .\src\QuickFileDesk.csproj
 ```
@@ -23,10 +42,10 @@ dotnet run --project .\src\QuickFileDesk.csproj
 dotnet run --project .\src\QuickFileDesk.csproj -- "D:\Work"
 ```
 
-生成 Windows x64 便携版时，将整个输出目录放在有写入权限的位置，然后双击其中的 `1Commander.exe`。移动或备份时请保留同目录的 DLL 和运行时配置文件。
+用下面的命令构建 Windows x64 便携版。发布或备份时请保留整个输出目录。
 
 ```powershell
-dotnet publish .\src\QuickFileDesk.csproj -c Release -r win-x64 --self-contained false -o .\artifacts\win-x64
+dotnet publish .\src\QuickFileDesk.csproj -c Release -r win-x64 --self-contained true -o .\artifacts\win-x64
 ```
 
 ## 日常操作

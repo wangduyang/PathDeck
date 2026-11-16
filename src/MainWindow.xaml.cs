@@ -43,6 +43,7 @@ public partial class MainWindow : Window
         colorMenu = CreateColorMenu();
         FileList.ContextMenu = new ContextMenu
         {
+            MaxHeight = double.PositiveInfinity,
             Items =
             {
                 colorMenu,
@@ -69,6 +70,9 @@ public partial class MainWindow : Window
                 }, "\uE718", "IconViolet")),
                 (menuPath = Menu("复制路径", "Ctrl+Shift+C", CopyPaths, "\uE71B", "IconTeal")),
                 Menu("属性", "Alt+Enter", ShowProperties, "\uE946", "IconSlate"),
+                new Separator(),
+                (openPyCharmMenu = Menu("在 PyCharm 中打开此工程", "", OpenPyCharm, "\uE943", "IconGreen")),
+                (openTerminalMenu = Menu("打开终端", "", OpenTerminal, "\uE756", "IconTeal")),
                 Menu("在资源管理器中打开", "", OpenExplorer, "\uE8A7")
             }
         };
@@ -625,7 +629,7 @@ public partial class MainWindow : Window
         extractMenu.IsEnabled = !working;
         var selectedFile = count == 1 && FileList.SelectedItem is FileEntry { IsDirectory: false };
         var canExtract = selectedFile && FileList.SelectedItem is FileEntry entry && ArchiveFiles.GetExtension(entry.Name) is not null;
-        ApplyMenuVisibility(selectedFile, canExtract);
+        ApplyMenuVisibility(selectedFile, canExtract, FolderForMenu() is not null);
     }
 
     private Dictionary<string, ReviewItem> ReviewPairs() =>

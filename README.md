@@ -2,11 +2,11 @@
 
 PathDeck 是一款面向 Windows 的便携文件资源管理器，集成单栏多标签浏览、跨盘查找和图片检查，适合在项目目录、数据集和输出文件之间频繁切换。
 
-当前版本为 **1.0.2**。便携版可免费下载。
+当前版本为 **1.0.3**。便携版可免费下载。
 
 ## 下载并运行
 
-1. 从 [GitHub Releases](https://github.com/wangduyang/PathDeck/releases/tag/v1.0.2) 下载 `PathDeck-1.0.2-win-x64.zip`。
+1. 从 [GitHub Releases](https://github.com/wangduyang/PathDeck/releases/tag/v1.0.3) 下载 `PathDeck-1.0.3-win-x64.zip`。
 2. 将 ZIP 完整解压到有写入权限的目录。
 3. 双击 `PathDeck.exe`。便携包内含 .NET 桌面运行时，可以直接启动。
 
@@ -91,6 +91,7 @@ Everything 支持查找其索引中的网络共享。以 UNC 路径加入 Everyt
 
 ### 打开方式和归档
 
+- 右键文件列表空白处或单个文件夹，选「在 PyCharm 中打开此工程」或「打开终端」。前者使用本机安装的 PyCharm 打开对应文件夹，后者在该目录启动 Windows 终端。没有 Windows 终端时会打开命令提示符。
 - 右键单个文件，选「打开方式…」，在 Windows 应用选择窗口中选择程序。
 - 选中一个或多个文件或文件夹，右键选「压缩为」，选择格式并输入压缩包名称。压缩包生成在当前文件夹。
 - 右键选中一个支持的压缩包，点「解压到同名文件夹」。程序在压缩包旁创建结果文件夹。同名时会加「副本」后缀。

@@ -48,6 +48,51 @@ internal sealed class WindowsIntegration(RegistryKey user, string executable, bo
     [DllImport("shell32.dll", ExactSpelling = true)]
     private static extern int SHOpenWithDialog(IntPtr owner, in OpenWithInfo info);
 
+    internal static string? FindPyCharm()
+    {
+        const string executable = "pycharm64.exe";
+        const string uninstallPath = @"Software\Microsoft\Windows\CurrentVersion\Uninstall";
+        foreach (var (root, path) in new[]
+        {
+            (Registry.CurrentUser, uninstallPath),
+            (Registry.LocalMachine, uninstallPath),
+            (Registry.LocalMachine, @"Software\WOW6432Node\Microsoft\Windows\CurrentVersion\Uninstall")
+        })
+        {
+            using var uninstall = root.OpenSubKey(path);
+            if (uninstall is null) continue;
+            foreach (var name in uninstall.GetSubKeyNames())
+            {
+                using var app = uninstall.OpenSubKey(name);
+                if (app?.GetValue("DisplayName") is not string title ||
+                    !title.StartsWith("PyCharm", StringComparison.OrdinalIgnoreCase) ||
+                    app.GetValue("InstallLocation") is not string location ||
+                    !Path.IsPathFullyQualified(location)) continue;
+                var launcher = Path.Combine(location, "bin", executable);
+                if (File.Exists(launcher)) return launcher;
+            }
+        }
+
+        var programs = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Programs");
+        if (Directory.Exists(programs))
+        {
+            foreach (var folder in Directory.EnumerateDirectories(programs, "PyCharm*"))
+            {
+                var launcher = Path.Combine(folder, "bin", executable);
+                if (File.Exists(launcher)) return launcher;
+            }
+        }
+
+        foreach (var entry in (Environment.GetEnvironmentVariable("PATH") ?? "").Split(Path.PathSeparator))
+        {
+            var directory = entry.Trim().Trim('"');
+            if (!Path.IsPathFullyQualified(directory)) continue;
+            var launcher = Path.Combine(directory, executable);
+            if (File.Exists(launcher)) return launcher;
+        }
+        return null;
+    }
+
     private string Launcher => $"\"{executable}\"";
 
     // Appending a path segment keeps the closing quote from being escaped at a drive root.

@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.IO;
 using System.Text.Json;
 using System.Windows;
@@ -12,6 +13,8 @@ public partial class MainWindow
     private MenuItem compressMenu = null!;
     private MenuItem extractMenu = null!;
     private MenuItem openWithMenu = null!;
+    private MenuItem openPyCharmMenu = null!;
+    private MenuItem openTerminalMenu = null!;
     private CancellationTokenSource? archiveCancellation;
 
     private void LoadFileMenu()
@@ -25,7 +28,7 @@ public partial class MainWindow
 
     private static List<string> ReadHiddenMenuItems() => PortableSettings.Load<List<string>>(MenuSettingsFile) ?? [];
 
-    private void ApplyMenuVisibility(bool canOpenWith, bool canExtract)
+    private void ApplyMenuVisibility(bool canOpenWith, bool canExtract, bool canOpenFolder)
     {
         Separator? nextSeparator = null;
         var hasVisibleItem = false;
@@ -40,7 +43,8 @@ public partial class MainWindow
             if (item is not MenuItem command) continue;
             var visible = !hiddenMenuItems.Contains((string)command.Header) &&
                           (command != openWithMenu || canOpenWith) &&
-                          (command != extractMenu || canExtract);
+                          (command != extractMenu || canExtract) &&
+                          (canOpenFolder || (command != openPyCharmMenu && command != openTerminalMenu));
             command.Visibility = visible ? Visibility.Visible : Visibility.Collapsed;
             if (!visible) continue;
             if (nextSeparator is not null) nextSeparator.Visibility = Visibility.Visible;
@@ -182,6 +186,55 @@ public partial class MainWindow
         CancelArchiveButton.IsEnabled = false;
         Report("正在取消…");
         request.Cancel();
+    }
+
+    private string? FolderForMenu()
+    {
+        if (Current is not { Loaded: true } tab) return null;
+        return FileList.SelectedItems.Count switch
+        {
+            0 => tab.Path,
+            1 when FileList.SelectedItem is FileEntry { IsDirectory: true } entry => entry.FullPath,
+            _ => null
+        };
+    }
+
+    private async void OpenPyCharm()
+    {
+        if (FolderForMenu() is not { } directory) return;
+        string? launcher;
+        try { launcher = await Task.Run(WindowsIntegration.FindPyCharm); }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or System.Security.SecurityException)
+        {
+            Report($"无法查找 PyCharm（{ex.Message}）");
+            return;
+        }
+        if (launcher is null)
+        {
+            Report("找不到 PyCharm。请先安装 PyCharm，或将其 bin 目录加入 PATH。");
+            return;
+        }
+
+        var start = new ProcessStartInfo(launcher) { UseShellExecute = true };
+        start.ArgumentList.Add(directory);
+        ShellStart(start);
+    }
+
+    private void OpenTerminal()
+    {
+        if (FolderForMenu() is not { } directory) return;
+        var terminal = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+            "Microsoft", "WindowsApps", "wt.exe");
+        if (!File.Exists(terminal))
+        {
+            ShellStart(CreateCommandPromptStartInfo(directory));
+            return;
+        }
+
+        var start = new ProcessStartInfo(terminal) { UseShellExecute = true, WorkingDirectory = directory };
+        start.ArgumentList.Add("-d");
+        start.ArgumentList.Add(".");
+        ShellStart(start);
     }
 
     private void OpenWithSelection()

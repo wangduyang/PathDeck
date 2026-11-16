@@ -21,6 +21,7 @@ public partial class ImageViewerWindow : Window
     private CancellationTokenSource? loading;
     private CancellationTokenSource? changingMask;
     private NiftiReview? activeReview;
+    private ImageViewport? linkedView;
     private bool saving;
     private string saveStatus = "";
 
@@ -30,6 +31,7 @@ public partial class ImageViewerWindow : Window
         this.index = index;
         InitializeComponent();
         Editor.StateChanged += UpdateEditorControls;
+        Editor.ViewNavigated += SyncView;
         ColorSwatch.Background = new SolidColorBrush(Editor.StrokeColor);
         UpdatePosition();
         UpdateEditorControls();
@@ -44,6 +46,19 @@ public partial class ImageViewerWindow : Window
         NextButton.IsEnabled = index + 1 < images.Length;
     }
 
+    private IEnumerable<ImageViewerWindow> OtherViewers() => Application.Current.Windows
+        .OfType<ImageViewerWindow>().Where(viewer => !ReferenceEquals(viewer, this));
+
+    private void SyncView(ImageViewport view)
+    {
+        linkedView = view;
+        foreach (var viewer in OtherViewers())
+        {
+            viewer.linkedView = view;
+            viewer.Editor.ApplyViewport(view);
+        }
+    }
+
     private async Task ShowImage()
     {
         loading?.Cancel();
@@ -54,6 +69,7 @@ public partial class ImageViewerWindow : Window
         activeReview = null;
         MaskControls.Visibility = Visibility.Collapsed;
         saveStatus = "";
+        linkedView = OtherViewers().Select(viewer => viewer.linkedView).FirstOrDefault(view => view.HasValue);
         Editor.SetImage(null, null, null);
         ImageHint.Text = "正在加载图片…";
         ImageHint.Visibility = Visibility.Visible;
@@ -82,6 +98,7 @@ public partial class ImageViewerWindow : Window
                     Editor.SetReview(review, overlay);
                     ShowMaskOptions(item, review);
                 }
+                if (linkedView is { } view) Editor.ApplyViewport(view);
                 ImageHint.Visibility = Visibility.Collapsed;
             }
             finally

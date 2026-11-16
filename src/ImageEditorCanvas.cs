@@ -5,6 +5,8 @@ using System.Windows.Media.Imaging;
 
 namespace QuickFileDesk;
 
+internal readonly record struct ImageViewport(bool IsFit, double Zoom, Point RelativeCenter);
+
 public sealed class ImageEditorCanvas : FrameworkElement
 {
     private BitmapSource? bitmap;
@@ -22,7 +24,10 @@ public sealed class ImageEditorCanvas : FrameworkElement
     private MouseButton? panButton;
     private Point? hoveredPixel;
 
+    private ImageViewport? navigation;
+
     internal event Action? StateChanged;
+    internal event Action<ImageViewport>? ViewNavigated;
     internal ImageTool Tool { get; private set; }
     internal Color StrokeColor { get; set; } = Color.FromRgb(255, 100, 53);
     internal double StrokeWidth { get; set; } = 3;
@@ -51,7 +56,7 @@ public sealed class ImageEditorCanvas : FrameworkElement
         mask = null;
         review = null;
         ClearPixel();
-        FitImage();
+        ResetView();
     }
 
     internal void SetReview(NiftiReview? source, BitmapSource? overlay)
@@ -77,9 +82,41 @@ public sealed class ImageEditorCanvas : FrameworkElement
 
     internal void FitImage()
     {
+        ResetView();
+        PublishViewport();
+    }
+
+    private void ResetView()
+    {
+        navigation = null;
         fit = true;
-        if (pixels is not null) scale = FitScale();
+        scale = FitScale();
         ViewChanged();
+    }
+
+    internal void ApplyViewport(ImageViewport view)
+    {
+        if (pixels is not { } samples || !HasImage) return;
+        navigation = view;
+        fit = view.IsFit;
+        scale = fit ? FitScale() : view.Zoom / VisualTreeHelper.GetDpi(this).DpiScaleX;
+        if (!fit)
+        {
+            origin = new Point(
+                ActualWidth / 2 - view.RelativeCenter.X * samples.Width * scale,
+                ActualHeight / 2 - view.RelativeCenter.Y * samples.Height * scale);
+        }
+        ClearPixel();
+        ViewChanged();
+    }
+
+    private void PublishViewport()
+    {
+        if (pixels is not { } samples || !HasImage) return;
+        var center = ImagePoint(new Point(ActualWidth / 2, ActualHeight / 2));
+        var view = new ImageViewport(fit, Zoom, new Point(center.X / samples.Width, center.Y / samples.Height));
+        navigation = view;
+        ViewNavigated?.Invoke(view);
     }
 
     internal void ActualSize()
@@ -101,6 +138,7 @@ public sealed class ImageEditorCanvas : FrameworkElement
         scale = newScale;
         origin = new Point(anchor.X - point.X * scale, anchor.Y - point.Y * scale);
         ViewChanged();
+        PublishViewport();
     }
 
     private static double Constrain(double offset, double viewport, double drawn) =>
@@ -127,8 +165,15 @@ public sealed class ImageEditorCanvas : FrameworkElement
     protected override void OnRenderSizeChanged(SizeChangedInfo sizeInfo)
     {
         base.OnRenderSizeChanged(sizeInfo);
-        if (fit) FitImage();
-        else ViewChanged();
+        if (navigation is { } view) ApplyViewport(view);
+        else ResetView();
+    }
+
+    protected override void OnDpiChanged(DpiScale oldDpi, DpiScale newDpi)
+    {
+        base.OnDpiChanged(oldDpi, newDpi);
+        if (navigation is { } view) ApplyViewport(view);
+        else ResetView();
     }
 
     protected override void OnRender(DrawingContext drawing)
@@ -218,11 +263,11 @@ public sealed class ImageEditorCanvas : FrameworkElement
     {
         base.OnMouseMove(e);
         var viewport = e.GetPosition(this);
-        if (panButton is not null)
+        if (panButton is not null && !fit)
         {
-            fit = false;
             origin = dragOrigin + (viewport - dragStart);
             ViewChanged();
+            PublishViewport();
         }
         else if (draft is not null)
         {

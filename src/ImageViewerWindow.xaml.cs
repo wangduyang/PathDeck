@@ -21,7 +21,6 @@ public partial class ImageViewerWindow : Window
     private CancellationTokenSource? loading;
     private CancellationTokenSource? changingMask;
     private NiftiReview? activeReview;
-    private ImageViewport? linkedView;
     private bool saving;
     private string saveStatus = "";
 
@@ -32,6 +31,7 @@ public partial class ImageViewerWindow : Window
         InitializeComponent();
         Editor.StateChanged += UpdateEditorControls;
         Editor.ViewNavigated += SyncView;
+        Editor.PointerMoved += SyncPointer;
         ColorSwatch.Background = new SolidColorBrush(Editor.StrokeColor);
         UpdatePosition();
         UpdateEditorControls();
@@ -49,14 +49,31 @@ public partial class ImageViewerWindow : Window
     private IEnumerable<ImageViewerWindow> OtherViewers() => Application.Current.Windows
         .OfType<ImageViewerWindow>().Where(viewer => !ReferenceEquals(viewer, this));
 
+    private ImageViewerWindow[] ComparisonPeers()
+    {
+        if (Editor.ImageDimensions is not { } dimensions) return [];
+        var viewers = OtherViewers().ToArray();
+        return viewers.All(viewer => viewer.Editor.ImageDimensions == dimensions) ? viewers : [];
+    }
+
     private void SyncView(ImageViewport view)
     {
-        linkedView = view;
-        foreach (var viewer in OtherViewers())
-        {
-            viewer.linkedView = view;
+        foreach (var viewer in ComparisonPeers())
             viewer.Editor.ApplyViewport(view);
-        }
+    }
+
+    private void SyncPointer(Point? position)
+    {
+        Editor.SetLinkedPointer(null);
+        foreach (var viewer in ComparisonPeers())
+            viewer.Editor.SetLinkedPointer(position);
+    }
+
+    private void ClearComparisonPointers()
+    {
+        Editor.SetLinkedPointer(null);
+        foreach (var viewer in OtherViewers())
+            viewer.Editor.SetLinkedPointer(null);
     }
 
     private async Task ShowImage()
@@ -69,7 +86,7 @@ public partial class ImageViewerWindow : Window
         activeReview = null;
         MaskControls.Visibility = Visibility.Collapsed;
         saveStatus = "";
-        linkedView = OtherViewers().Select(viewer => viewer.linkedView).FirstOrDefault(view => view.HasValue);
+        ClearComparisonPointers();
         Editor.SetImage(null, null, null);
         ImageHint.Text = "正在加载图片…";
         ImageHint.Visibility = Visibility.Visible;
@@ -98,6 +115,7 @@ public partial class ImageViewerWindow : Window
                     Editor.SetReview(review, overlay);
                     ShowMaskOptions(item, review);
                 }
+                var linkedView = ComparisonPeers().Select(viewer => viewer.Editor.Viewport).FirstOrDefault(view => view.HasValue);
                 if (linkedView is { } view) Editor.ApplyViewport(view);
                 ImageHint.Visibility = Visibility.Collapsed;
             }
@@ -138,6 +156,7 @@ public partial class ImageViewerWindow : Window
     {
         loading?.Cancel();
         changingMask?.Cancel();
+        ClearComparisonPointers();
     }
     private async void PreviousClick(object sender, RoutedEventArgs e) => await Move(-1);
     private async void NextClick(object sender, RoutedEventArgs e) => await Move(1);

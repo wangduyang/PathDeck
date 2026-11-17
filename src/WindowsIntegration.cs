@@ -25,6 +25,56 @@ internal sealed class WindowsIntegration(RegistryKey user, string executable, bo
     private static readonly string[] FolderTypes = ["Directory", "Drive"];
     private static readonly Lazy<Task<Dispatcher>> ShortcutIconDispatcher = new(StartShortcutIconDispatcher);
 
+    internal static (BitmapSource Bitmap, Point Hotspot)? ReadHandCursor()
+    {
+        const int handCursor = 32649;
+        var cursor = LoadCursorW(IntPtr.Zero, (IntPtr)handCursor);
+        if (cursor == IntPtr.Zero || !GetIconInfo(cursor, out var info)) return null;
+
+        IntPtr icon = IntPtr.Zero;
+        try
+        {
+            info.IsIcon = 1;
+            icon = CreateIconIndirect(in info);
+            if (icon == IntPtr.Zero) return null;
+            var bitmap = Imaging.CreateBitmapSourceFromHIcon(icon, Int32Rect.Empty, BitmapSizeOptions.FromEmptyOptions());
+            bitmap.Freeze();
+            return (bitmap, new Point(info.HotspotX, info.HotspotY));
+        }
+        catch (Exception ex) when (ex is COMException or ArgumentException)
+        {
+            return null;
+        }
+        finally
+        {
+            if (icon != IntPtr.Zero) DestroyIcon(icon);
+            if (info.Mask != IntPtr.Zero) DeleteObject(info.Mask);
+            if (info.Color != IntPtr.Zero) DeleteObject(info.Color);
+        }
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
+    private struct CursorIconInfo
+    {
+        public int IsIcon;
+        public uint HotspotX, HotspotY;
+        public IntPtr Mask, Color;
+    }
+
+    [DllImport("user32.dll", ExactSpelling = true)]
+    private static extern IntPtr LoadCursorW(IntPtr instance, IntPtr resource);
+
+    [DllImport("user32.dll")]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    private static extern bool GetIconInfo(IntPtr icon, out CursorIconInfo info);
+
+    [DllImport("user32.dll")]
+    private static extern IntPtr CreateIconIndirect(in CursorIconInfo info);
+
+    [DllImport("gdi32.dll")]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    private static extern bool DeleteObject(IntPtr handle);
+
     internal static string? OpenWith(Window owner, string path)
     {
         const uint execute = 0x4;

@@ -9,6 +9,8 @@ internal readonly record struct ImageViewport(bool IsFit, double Zoom, Point Rel
 
 public sealed class ImageEditorCanvas : FrameworkElement
 {
+    private static readonly Lazy<(BitmapSource Bitmap, Point Hotspot)?> HandCursor = new(WindowsIntegration.ReadHandCursor);
+
     private BitmapSource? bitmap;
     private BitmapSource? mask;
     private NiftiReview? review;
@@ -23,11 +25,13 @@ public sealed class ImageEditorCanvas : FrameworkElement
     private Point dragOrigin;
     private MouseButton? panButton;
     private Point? hoveredPixel;
+    private Point? linkedPointer;
 
     private ImageViewport? navigation;
 
     internal event Action? StateChanged;
     internal event Action<ImageViewport>? ViewNavigated;
+    internal event Action<Point?>? PointerMoved;
     internal ImageTool Tool { get; private set; }
     internal Color StrokeColor { get; set; } = Color.FromRgb(255, 100, 53);
     internal double StrokeWidth { get; set; } = 3;
@@ -36,6 +40,9 @@ public sealed class ImageEditorCanvas : FrameworkElement
     internal string SizeReadout => pixels is null ? "" : $"{pixels.Width} × {pixels.Height} px";
     internal double Zoom => scale * VisualTreeHelper.GetDpi(this).DpiScaleX;
     internal bool HasImage => bitmap is not null;
+    internal (int Width, int Height)? ImageDimensions =>
+        HasImage && pixels is { } samples ? (samples.Width, samples.Height) : null;
+    internal ImageViewport? Viewport => navigation;
     internal bool CanUndo => edits?.Marks.Count > 0;
     internal bool CanRedo => edits?.Undone.Count > 0;
     internal bool CanExport => bitmap is not null && pixels is not null &&
@@ -65,6 +72,13 @@ public sealed class ImageEditorCanvas : FrameworkElement
         mask = overlay;
         ClearPixel();
         Changed();
+    }
+
+    internal void SetLinkedPointer(Point? imagePoint)
+    {
+        if (linkedPointer == imagePoint) return;
+        linkedPointer = imagePoint;
+        InvalidateVisual();
     }
 
     internal void SetMaskOpacity(double value)
@@ -182,8 +196,16 @@ public sealed class ImageEditorCanvas : FrameworkElement
         drawing.DrawRectangle(Brushes.Transparent, null, new Rect(RenderSize));
         if (bitmap is null || pixels is null) return;
         drawing.PushTransform(new MatrixTransform(scale, 0, 0, scale, origin.X, origin.Y));
-        DrawImage(drawing, edits?.Marks, draft, 1.5 / scale, 13 / scale, VisualTreeHelper.GetDpi(this).PixelsPerDip);
+        var dpi = VisualTreeHelper.GetDpi(this);
+        DrawImage(drawing, edits?.Marks, draft, 1.5 / scale, 13 / scale, dpi.PixelsPerDip);
         drawing.Pop();
+
+        if (linkedPointer is not { } point) return;
+        var position = new Point(origin.X + point.X * scale, origin.Y + point.Y * scale);
+        if (!new Rect(RenderSize).Contains(position) || HandCursor.Value is not { } hand) return;
+        drawing.DrawImage(hand.Bitmap, new Rect(
+            position.X - hand.Hotspot.X / dpi.DpiScaleX, position.Y - hand.Hotspot.Y / dpi.DpiScaleY,
+            hand.Bitmap.PixelWidth / dpi.DpiScaleX, hand.Bitmap.PixelHeight / dpi.DpiScaleY));
     }
 
     private void DrawImage(DrawingContext drawing, IEnumerable<ImageMark>? marks, ImageMark? active,
@@ -307,6 +329,7 @@ public sealed class ImageEditorCanvas : FrameworkElement
     protected override void OnMouseLeave(MouseEventArgs e)
     {
         base.OnMouseLeave(e);
+        PointerMoved?.Invoke(null);
         ClearPixel();
     }
 
@@ -357,9 +380,11 @@ public sealed class ImageEditorCanvas : FrameworkElement
         var point = ImagePoint(viewport);
         if (pixels is not { } samples || !new Rect(RenderSize).Contains(viewport) || !OnImage(point))
         {
+            PointerMoved?.Invoke(null);
             ClearPixel();
             return;
         }
+        PointerMoved?.Invoke(point);
         var x = (int)point.X;
         var y = (int)point.Y;
         var current = new Point(x, y);

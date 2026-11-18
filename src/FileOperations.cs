@@ -3,7 +3,7 @@ using Microsoft.VisualBasic.FileIO;
 
 namespace QuickFileDesk;
 
-internal sealed record OperationResult(int Completed, string[] Remaining, string[] Errors, Dictionary<string, string>? Moves = null);
+internal sealed record OperationResult(int Completed, string[] Remaining, string[] Errors, Dictionary<string, string>? Moves = null, bool Canceled = false);
 
 internal static class FileOperations
 {
@@ -71,13 +71,15 @@ internal static class FileOperations
         return new(completed, remaining.ToArray(), errors.ToArray(), moves);
     }
 
-    public static OperationResult Recycle(string[] paths)
+    public static OperationResult Recycle(string[] paths, Action<int> reportCurrentItem)
     {
         var errors = new List<string>();
         var remaining = new List<string>();
         var completed = 0;
-        foreach (var path in paths)
+        for (var index = 0; index < paths.Length; index++)
         {
+            var path = paths[index];
+            reportCurrentItem(index);
             try
             {
                 if (!Path.IsPathFullyQualified(path) || Path.GetFileName(Path.TrimEndingDirectorySeparator(path)).Length == 0)
@@ -90,8 +92,8 @@ internal static class FileOperations
             }
             catch (OperationCanceledException)
             {
-                remaining.AddRange(paths.Skip(completed + remaining.Count));
-                break;
+                remaining.AddRange(paths.Skip(index));
+                return new(completed, remaining.ToArray(), errors.ToArray(), Canceled: true);
             }
             catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or ArgumentException or NotSupportedException)
             {

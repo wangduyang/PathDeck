@@ -150,8 +150,8 @@ public partial class MainWindow
     {
         using var request = new CancellationTokenSource();
         archiveCancellation = request;
-        ArchiveProgressPanel.Visibility = Visibility.Visible;
-        ArchiveProgressBar.IsIndeterminate = true;
+        OperationProgressPanel.Visibility = Visibility.Visible;
+        OperationProgressBar.IsIndeterminate = true;
         CancelArchiveButton.IsEnabled = true;
 
         var progress = new Progress<ArchiveProgress>(value =>
@@ -175,8 +175,8 @@ public partial class MainWindow
         finally
         {
             archiveCancellation = null;
-            ArchiveProgressBar.IsIndeterminate = false;
-            ArchiveProgressPanel.Visibility = Visibility.Collapsed;
+            OperationProgressBar.IsIndeterminate = false;
+            OperationProgressPanel.Visibility = Visibility.Collapsed;
         }
     }
 

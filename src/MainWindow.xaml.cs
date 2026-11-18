@@ -786,11 +786,52 @@ public partial class MainWindow : Window
             return;
         }
         if (!PathDeckDialogs.Confirm(this, "移到回收站？", $"将选中的 {paths.Length} 项移到回收站。", "移到回收站", "取消")) return;
-        await Perform("正在移到回收站…", () => FileOperations.Recycle(paths), tab, result =>
+        var elapsed = Stopwatch.StartNew();
+        var currentIndex = 0;
+
+        void ShowProgress()
         {
-            var cleared = MoveColors(paths.Except(result.Remaining, StringComparer.OrdinalIgnoreCase).Select(path => (path, (string?)null)));
-            return $"已移到回收站 {result.Completed} 项" + (cleared ? "" : " · 颜色标签未清除");
-        });
+            var index = Volatile.Read(ref currentIndex);
+            var path = paths[index];
+            var name = Path.GetFileName(Path.TrimEndingDirectorySeparator(path));
+            RecycleProgressText.Text = $"正在移到回收站 · 第 {index + 1}/{paths.Length} 项 · 已用 {elapsed.Elapsed:hh\\:mm\\:ss} · {name}";
+            RecycleProgressText.ToolTip = path;
+        }
+
+        var timer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(1) };
+        timer.Tick += (_, _) => ShowProgress();
+        StatusText.Visibility = Visibility.Collapsed;
+        RecycleProgressText.Visibility = Visibility.Visible;
+        OperationProgressPanel.Visibility = Visibility.Visible;
+        OperationProgressBar.IsIndeterminate = true;
+        CancelArchiveButton.Visibility = Visibility.Collapsed;
+        ShowProgress();
+        timer.Start();
+        try
+        {
+            await Perform("正在移到回收站…",
+                () => FileOperations.Recycle(paths, index => Volatile.Write(ref currentIndex, index)), tab, result =>
+            {
+                timer.Stop();
+                RecycleProgressText.Text = "正在更新文件列表…";
+                RecycleProgressText.ToolTip = null;
+                var cleared = MoveColors(paths.Except(result.Remaining, StringComparer.OrdinalIgnoreCase)
+                    .Select(path => (path, (string?)null)));
+                var message = $"已移到回收站 {result.Completed} 项";
+                if (result.Canceled) message = $"操作已取消 · {message}";
+                return message + (cleared ? "" : " · 颜色标签未清除");
+            });
+        }
+        finally
+        {
+            timer.Stop();
+            OperationProgressBar.IsIndeterminate = false;
+            OperationProgressPanel.Visibility = Visibility.Collapsed;
+            CancelArchiveButton.Visibility = Visibility.Visible;
+            RecycleProgressText.Visibility = Visibility.Collapsed;
+            RecycleProgressText.ToolTip = null;
+            StatusText.Visibility = Visibility.Visible;
+        }
     }
 
     private async Task Perform(string progress, Func<OperationResult> action, BrowserTab tab, Func<OperationResult, string> complete)

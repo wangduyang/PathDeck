@@ -5,6 +5,7 @@ using System.Security;
 using System.Text;
 using System.Windows;
 using System.Windows.Interop;
+using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Threading;
 using Microsoft.Win32;
@@ -417,12 +418,36 @@ internal sealed class WindowsIntegration(RegistryKey user, string executable, bo
         const int captionColor = 35;
         const int textColor = 36;
         uint enabled = darkMode ? 1u : 0u;
-        uint caption = darkMode ? 0x002C1C14u : uint.MaxValue;
-        uint text = darkMode ? 0x00F6F0ECu : uint.MaxValue;
+        uint caption = uint.MaxValue;
+        uint text = darkMode ? 0x00F1F3F0u : uint.MaxValue;
         DwmSetWindowAttribute(handle, immersiveDarkMode, in enabled, sizeof(uint));
         DwmSetWindowAttribute(handle, captionColor, in caption, sizeof(uint));
         DwmSetWindowAttribute(handle, textColor, in text, sizeof(uint));
+
+        // Retain an opaque WPF fallback when the system cannot draw a backdrop.
+        if (window.TryFindResource("WindowBackground") is not Brush tint) return;
+        window.SetCurrentValue(Window.BackgroundProperty, tint);
+        if (!OperatingSystem.IsWindowsVersionAtLeast(10, 0, 22621) || SystemParameters.HighContrast) return;
+        if (HwndSource.FromHwnd(handle)?.CompositionTarget is not { } target) return;
+        const int systemBackdropType = 38;
+        uint acrylic = 3;
+        var margins = new GlassMargins { Left = -1, Right = -1, Top = -1, Bottom = -1 };
+        if (DwmSetWindowAttribute(handle, systemBackdropType, in acrylic, sizeof(uint)) != 0 ||
+            DwmExtendFrameIntoClientArea(handle, in margins) != 0) return;
+        target.BackgroundColor = Colors.Transparent;
+        var glassTint = tint.CloneCurrentValue();
+        glassTint.Opacity = darkMode ? .38 : .32;
+        window.SetCurrentValue(Window.BackgroundProperty, glassTint);
     }
+
+    [StructLayout(LayoutKind.Sequential)]
+    private struct GlassMargins
+    {
+        public int Left, Right, Top, Bottom;
+    }
+
+    [DllImport("dwmapi.dll")]
+    private static extern int DwmExtendFrameIntoClientArea(IntPtr window, in GlassMargins margins);
 
     [DllImport("dwmapi.dll")]
     private static extern int DwmSetWindowAttribute(IntPtr window, int attribute, in uint value, uint size);

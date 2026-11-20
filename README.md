@@ -2,11 +2,21 @@
 
 PathDeck 是一款面向 Windows 的便携文件资源管理器，集成单栏多标签浏览、跨盘查找和图片检查，适合在项目目录、数据集和输出文件之间频繁切换。
 
-当前版本为 **1.0.6**。便携版可免费下载。
+当前版本为 **1.0.7**。便携版可免费下载。
+
+## 1.0.7 更新
+
+- 液态玻璃风格：通透面板、圆角胶囊控件、随鼠标移动的高光，并统一浅色与深色界面。Windows 11 22621 及以上使用系统模糊背景，其他环境保留普通背景。
+- 在 **设置 → 使用说明与演示** 查看 10 个场景章节。内嵌真实界面配图，支持播放、暂停、前后翻看与点击放大；离线可用。
+- 使用说明覆盖文件管理、目录与跨盘搜索、图片缩放与多窗口联动、绘图测距，以及 NIfTI 多类别标签与不透明度调节。
+
+![PathDeck 界面](src/HelpImages/browser.png)
+
+图中文件与标注均为示例数据。界面设计参考 [Atrium Desktop](https://github.com/wynter-yaxley/atrium-desktop)，当前材质通过 Windows 系统背景模糊与 WPF 动态高光呈现。
 
 ## 下载并运行
 
-1. 从 [GitHub Releases](https://github.com/wangduyang/PathDeck/releases/tag/v1.0.6) 下载 `PathDeck-1.0.6-win-x64.zip`。
+1. 从 [GitHub Releases](https://github.com/wangduyang/PathDeck/releases/tag/v1.0.7) 下载 `PathDeck-1.0.7-win-x64.zip`。
 2. 将 ZIP 完整解压到有写入权限的目录。
 3. 双击 `PathDeck.exe`。便携包内含 .NET 桌面运行时，可以直接启动。
 

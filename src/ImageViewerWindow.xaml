@@ -5,7 +5,7 @@
         Width="1000" Height="780" MinWidth="420" MinHeight="340"
         WindowStartupLocation="CenterOwner"
         Background="{DynamicResource WindowBackground}" Foreground="{DynamicResource Text}"
-        FontFamily="Segoe UI, Microsoft YaHei UI" FontSize="13"
+        FontFamily="Segoe UI Variable Text, Segoe UI, Microsoft YaHei UI" FontSize="13"
         Loaded="LoadImage" Closing="CheckEditsBeforeClose" Closed="CancelLoad" PreviewKeyDown="HandleKeys"
         UseLayoutRounding="True">
     <Window.Resources>
@@ -17,10 +17,10 @@
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="RadioButton">
-                        <Border x:Name="Surface" Padding="{TemplateBinding Padding}" CornerRadius="8"
+                        <local:LiquidGlassBorder x:Name="Surface" Padding="{TemplateBinding Padding}" CornerRadius="17"
                                 Background="{DynamicResource ButtonSurface}" BorderBrush="{DynamicResource ButtonEdge}" BorderThickness="1">
                             <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                        </Border>
+                        </local:LiquidGlassBorder>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
                                 <Setter TargetName="Surface" Property="Background" Value="{DynamicResource ButtonHover}"/>
@@ -85,7 +85,7 @@
             </StackPanel>
         </WrapPanel>
         <Border x:Name="MaskControls" Grid.Row="1" Background="{DynamicResource Panel}" BorderBrush="{DynamicResource Edge}"
-                BorderThickness="1" CornerRadius="9" Padding="10,6" Margin="0,0,0,8" Visibility="Collapsed">
+                BorderThickness="1" CornerRadius="18" Padding="12,8" Margin="0,0,0,8" Visibility="Collapsed">
             <StackPanel>
                 <TextBlock x:Name="MaskStatus" TextWrapping="Wrap" Foreground="{DynamicResource Muted}"/>
                 <WrapPanel x:Name="MaskOptions" Margin="0,6,0,0">
@@ -104,7 +104,7 @@
                 </WrapPanel>
             </StackPanel>
         </Border>
-        <Border Grid.Row="2" Background="{DynamicResource Field}" CornerRadius="10" Padding="8">
+        <Border Grid.Row="2" Background="{DynamicResource Field}" CornerRadius="20" Padding="10">
             <Border.ContextMenu>
                 <ContextMenu>
                     <MenuItem Header="打开方式…" Click="OpenWithClick"/>

@@ -4,7 +4,7 @@
         xmlns:local="clr-namespace:QuickFileDesk"
         Title="PathDeck" Icon="PathDeck.ico" Width="1260" Height="780" MinWidth="880" MinHeight="490"
         WindowStartupLocation="CenterScreen" Background="{DynamicResource WindowBackground}" Foreground="{DynamicResource Text}"
-        FontFamily="Segoe UI, Microsoft YaHei UI" FontSize="13"
+        FontFamily="Segoe UI Variable Text, Segoe UI, Microsoft YaHei UI" FontSize="13"
         Loaded="Start" Closing="CheckClose" Closed="Stop" PreviewKeyDown="Shortcuts"
         UseLayoutRounding="True">
     <Window.Resources>
@@ -14,16 +14,16 @@
             <Setter Property="Background" Value="{DynamicResource ButtonSurface}"/>
             <Setter Property="BorderBrush" Value="{DynamicResource ButtonEdge}"/>
             <Setter Property="BorderThickness" Value="1"/>
-            <Setter Property="Padding" Value="10,5"/>
+            <Setter Property="Padding" Value="12,6"/>
             <Setter Property="Cursor" Value="Hand"/>
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
-                        <Border x:Name="Fill" CornerRadius="8" Background="{TemplateBinding Background}"
+                        <local:LiquidGlassBorder x:Name="Fill" CornerRadius="17" Background="{TemplateBinding Background}"
                                 BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}"
                                 Padding="{TemplateBinding Padding}">
                             <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                        </Border>
+                        </local:LiquidGlassBorder>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True"><Setter TargetName="Fill" Property="Background" Value="{DynamicResource ButtonHover}"/></Trigger>
                             <Trigger Property="IsKeyboardFocused" Value="True"><Setter TargetName="Fill" Property="BorderBrush" Value="{DynamicResource Accent}"/></Trigger>
@@ -36,7 +36,7 @@
         <Style x:Key="ToolbarButton" TargetType="Button" BasedOn="{StaticResource {x:Type Button}}">
             <Setter Property="Background" Value="Transparent"/>
             <Setter Property="BorderBrush" Value="Transparent"/>
-            <Setter Property="Padding" Value="6,4"/>
+            <Setter Property="Padding" Value="8,5"/>
         </Style>
         <Style x:Key="PrimaryActionButton" TargetType="Button" BasedOn="{StaticResource {x:Type Button}}">
             <Setter Property="Foreground" Value="{DynamicResource PrimaryText}"/>
@@ -46,10 +46,10 @@
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
-                        <Border x:Name="Fill" Background="{TemplateBinding Background}" BorderBrush="Transparent"
-                                BorderThickness="1" CornerRadius="8" Padding="{TemplateBinding Padding}">
+                        <local:LiquidGlassBorder x:Name="Fill" Background="{TemplateBinding Background}" BorderBrush="Transparent"
+                                BorderThickness="1" CornerRadius="17" Padding="{TemplateBinding Padding}">
                             <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                        </Border>
+                        </local:LiquidGlassBorder>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
                                 <Setter TargetName="Fill" Property="Background" Value="{DynamicResource PrimaryHover}"/>
@@ -144,7 +144,7 @@
                 <Setter.Value>
                     <ControlTemplate TargetType="ListViewItem">
                         <Border x:Name="Row" Background="{TemplateBinding Background}" BorderBrush="{DynamicResource RowDivider}" BorderThickness="0,0,0,1"
-                                Padding="0,4" SnapsToDevicePixels="True">
+                                Padding="0,4" CornerRadius="6" SnapsToDevicePixels="True">
                             <GridViewRowPresenter VerticalAlignment="Center" Content="{TemplateBinding Content}"
                                                   Columns="{Binding View.Columns, RelativeSource={RelativeSource AncestorType=ListView}}"/>
                         </Border>
@@ -169,14 +169,14 @@
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="TabItem">
-                        <Border x:Name="TabBackground" Background="Transparent" CornerRadius="8" MinHeight="30"
-                                BorderBrush="Transparent" BorderThickness="1" Margin="0,0,5,5" Padding="10,4,5,4">
+                        <local:LiquidGlassBorder x:Name="TabBackground" Background="{DynamicResource ToolbarSurface}" CornerRadius="17" MinHeight="34"
+                                BorderBrush="Transparent" BorderThickness="1" Margin="0,0,6,8" Padding="12,5,7,5">
                             <DockPanel>
                                 <Ellipse x:Name="TabSelectionDot" DockPanel.Dock="Left" Width="6" Height="6" Fill="{DynamicResource IdleDot}"
                                          VerticalAlignment="Center" Margin="0,0,6,0" IsHitTestVisible="False"/>
                                 <ContentPresenter ContentSource="Header" VerticalAlignment="Center"/>
                             </DockPanel>
-                        </Border>
+                        </local:LiquidGlassBorder>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
                                 <Setter TargetName="TabBackground" Property="Background" Value="{DynamicResource Hover}"/>
@@ -197,7 +197,7 @@
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
-                        <Border x:Name="Tile" Padding="9,7" CornerRadius="8" Background="{TemplateBinding Background}">
+                        <Border x:Name="Tile" Padding="10,8" CornerRadius="13" Background="{TemplateBinding Background}">
                             <ContentPresenter/>
                         </Border>
                         <ControlTemplate.Triggers>
@@ -209,13 +209,13 @@
             </Setter>
         </Style>
         <Style x:Key="SidebarCardSurface" TargetType="Border">
-            <Setter Property="Background" Value="{DynamicResource SidebarCard}"/>
-            <Setter Property="BorderBrush" Value="{DynamicResource Edge}"/>
+            <Setter Property="Background" Value="{DynamicResource GlassSurface}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource GlassEdge}"/>
             <Setter Property="BorderThickness" Value="1"/>
-            <Setter Property="CornerRadius" Value="12"/>
+            <Setter Property="CornerRadius" Value="22"/>
             <Setter Property="Effect">
                 <Setter.Value>
-                    <DropShadowEffect Color="#283B4D" BlurRadius="10" ShadowDepth="2" Direction="270" Opacity=".11"/>
+                    <DropShadowEffect Color="#172B23" BlurRadius="18" ShadowDepth="4" Direction="270" Opacity=".09"/>
                 </Setter.Value>
             </Setter>
         </Style>
@@ -291,7 +291,7 @@
             <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
         <Border Background="{DynamicResource Chrome}" BorderBrush="{DynamicResource Edge}" BorderThickness="0,0,0,1">
-            <Grid Margin="12,10,12,0">
+            <Grid Margin="14,12,14,0">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="242"/>
                     <ColumnDefinition Width="*"/>
@@ -299,8 +299,8 @@
                 </Grid.ColumnDefinitions>
                 <DockPanel Grid.Column="1" HorizontalAlignment="Left" KeyboardNavigation.TabNavigation="Local">
                     <Button x:Name="NewTabButton" DockPanel.Dock="Right" Content="＋" ToolTip="新建标签页 (Ctrl+T)"
-                            AutomationProperties.Name="新建标签页" Click="NewTabClick" Margin="4,0,0,5"
-                            Width="34" Height="30" Padding="3" VerticalAlignment="Top" TabIndex="1"/>
+                            AutomationProperties.Name="新建标签页" Click="NewTabClick" Margin="4,0,0,8"
+                            Width="34" Height="34" Padding="3" VerticalAlignment="Top" TabIndex="1"/>
                     <ScrollViewer HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Disabled" Focusable="False" TabIndex="0">
                         <TabControl x:Name="Tabs" SelectionChanged="ChangeTab" Background="Transparent" BorderThickness="0">
                             <TabControl.Template>
@@ -311,15 +311,15 @@
                         </TabControl>
                     </ScrollViewer>
                 </DockPanel>
-                <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Top" Margin="8,0,0,5">
-                    <Button x:Name="QuickSearchButton" Height="30" Click="QuickSearchClick" Style="{StaticResource PrimaryActionButton}"
+                <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Top" Margin="8,0,0,8">
+                    <Button x:Name="QuickSearchButton" Height="34" Click="QuickSearchClick" Style="{StaticResource PrimaryActionButton}"
                             ToolTip="搜索各磁盘中已建立索引的位置" AutomationProperties.Name="跨盘搜索">
                         <StackPanel Orientation="Horizontal">
                             <TextBlock Text="&#xE774;" FontFamily="Segoe MDL2 Assets" VerticalAlignment="Center"/>
                             <TextBlock Text="跨盘搜索" Margin="6,0,0,0" VerticalAlignment="Center"/>
                         </StackPanel>
                     </Button>
-                    <Button x:Name="SettingsButton" Content="&#xE713;" Click="OpenSettings" Width="34" Height="30" Padding="3"
+                    <Button x:Name="SettingsButton" Content="&#xE713;" Click="OpenSettings" Width="34" Height="34" Padding="3"
                             Margin="4,0,0,0" FontFamily="Segoe MDL2 Assets" Style="{StaticResource ToolbarButton}"
                             AutomationProperties.Name="设置" ToolTip="设置"/>
                 </StackPanel>
@@ -331,11 +331,11 @@
                 <ColumnDefinition Width="242"/>
                 <ColumnDefinition Width="*"/>
             </Grid.ColumnDefinitions>
-            <Border Background="{DynamicResource Sidebar}" BorderBrush="{DynamicResource Edge}" BorderThickness="0,0,1,0">
+            <Border Background="{DynamicResource Sidebar}">
                 <DockPanel Margin="12,13,12,12" LastChildFill="True">
                     <Grid DockPanel.Dock="Bottom" Margin="4,8,4,3">
-                        <Border Style="{StaticResource SidebarCardSurface}"/>
-                        <Grid Margin="7,8,7,7">
+                        <local:LiquidGlassBorder Style="{StaticResource SidebarCardSurface}"/>
+                        <Grid Margin="9,11,9,9">
                             <Grid.RowDefinitions>
                                 <RowDefinition Height="Auto"/>
                                 <RowDefinition Height="Auto"/>
@@ -352,16 +352,16 @@
                     </Grid>
                     <ScrollViewer VerticalScrollBarVisibility="Auto">
                         <StackPanel>
-                            <Grid Margin="4,3,4,9">
-                                <Border Style="{StaticResource SidebarCardSurface}"/>
-                                <StackPanel Margin="6,7">
+                            <Grid Margin="4,3,4,14">
+                                <local:LiquidGlassBorder Style="{StaticResource SidebarCardSurface}"/>
+                                <StackPanel Margin="8,10">
                                     <TextBlock Text="常用位置" Style="{StaticResource SidebarSectionTitle}" Margin="7,3,0,5"/>
                                     <StackPanel x:Name="PlacesPanel"/>
                                 </StackPanel>
                             </Grid>
                             <Grid Margin="4,0,4,8">
-                                <Border Style="{StaticResource SidebarCardSurface}"/>
-                                <StackPanel Margin="6,7">
+                                <local:LiquidGlassBorder Style="{StaticResource SidebarCardSurface}"/>
+                                <StackPanel Margin="8,10">
                                     <TextBlock Text="驱动器" Style="{StaticResource SidebarSectionTitle}" Margin="7,3,0,5"/>
                                     <ItemsControl x:Name="SidebarDrives">
                                         <ItemsControl.ItemTemplate>
@@ -403,19 +403,19 @@
                 </DockPanel>
             </Border>
 
-            <Grid x:Name="FolderPage" Grid.Column="1" Margin="14,12,14,12">
+            <Grid x:Name="FolderPage" Grid.Column="1" Margin="14,16,16,16">
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto"/>
                     <RowDefinition Height="Auto"/>
                     <RowDefinition Height="*"/>
                 </Grid.RowDefinitions>
-                <Grid Margin="0,0,0,10" Height="36">
+                <Grid Margin="0,0,0,12" Height="40">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="Auto"/>
                         <ColumnDefinition Width="*"/>
                         <ColumnDefinition Width="Auto"/>
                     </Grid.ColumnDefinitions>
-                    <Border Background="{DynamicResource Panel}" CornerRadius="10" BorderBrush="{DynamicResource Edge}" BorderThickness="1" Padding="2">
+                    <local:LiquidGlassBorder Background="{DynamicResource Panel}" CornerRadius="20" BorderBrush="{DynamicResource Edge}" BorderThickness="1" Padding="2">
                         <StackPanel Orientation="Horizontal">
                             <Button x:Name="BackButton" Content="&#xE72B;" ToolTip="后退 (Alt+←)" AutomationProperties.Name="后退"
                                     Click="BackClick" Width="32" FontFamily="Segoe MDL2 Assets" Style="{StaticResource ToolbarButton}"/>
@@ -426,8 +426,8 @@
                             <Button Content="&#xE72C;" ToolTip="刷新 (F5)" AutomationProperties.Name="刷新"
                                     Click="RefreshClick" Width="32" FontFamily="Segoe MDL2 Assets" Style="{StaticResource ToolbarButton}"/>
                         </StackPanel>
-                    </Border>
-                    <Border Grid.Column="1" Margin="8,0" Padding="4,2" CornerRadius="10" BorderThickness="1"
+                    </local:LiquidGlassBorder>
+                    <local:LiquidGlassBorder Grid.Column="1" Margin="8,0" Padding="4,2" CornerRadius="20" BorderThickness="1"
                             BorderBrush="{DynamicResource Edge}" Background="{DynamicResource Field}">
                         <Grid>
                             <Grid x:Name="AddressTrail">
@@ -454,8 +454,8 @@
                                      Background="Transparent" BorderThickness="0" ToolTip="回车打开，Esc 取消"
                                      KeyDown="AddressKey" LostKeyboardFocus="AddressLostFocus"/>
                         </Grid>
-                    </Border>
-                    <Border x:Name="FolderSearch" Grid.Column="2" Width="194" CornerRadius="7" Padding="3,2" BorderThickness="1"
+                    </local:LiquidGlassBorder>
+                    <local:LiquidGlassBorder x:Name="FolderSearch" Grid.Column="2" Width="194" CornerRadius="20" Padding="3,2" BorderThickness="1"
                             BorderBrush="{DynamicResource Edge}" Background="{DynamicResource Field}">
                         <DockPanel>
                             <Button DockPanel.Dock="Right" Content="&#xE721;" AutomationProperties.Name="搜索当前目录" ToolTip="搜索当前目录及子目录 (Ctrl+F)"
@@ -482,14 +482,14 @@
                                 </TextBlock>
                             </Grid>
                         </DockPanel>
-                    </Border>
+                    </local:LiquidGlassBorder>
                 </Grid>
 
                 <DockPanel Grid.Row="1" Margin="0,0,0,10">
                     <CheckBox DockPanel.Dock="Right" Content="隐藏文件" ToolTip="勾选后显示隐藏文件和系统文件" x:Name="HiddenToggle"
                               Foreground="{DynamicResource Muted}" VerticalContentAlignment="Center" Click="HiddenClick"/>
-                    <Border x:Name="FileViewOptions" DockPanel.Dock="Right" VerticalAlignment="Center" Background="{DynamicResource ToolbarSurface}" Padding="2"
-                            CornerRadius="8" Margin="0,0,15,0">
+                    <local:LiquidGlassBorder x:Name="FileViewOptions" DockPanel.Dock="Right" VerticalAlignment="Center" Background="{DynamicResource ToolbarSurface}" Padding="2"
+                            CornerRadius="17" Margin="0,0,15,0">
                         <StackPanel Orientation="Horizontal">
                             <Button x:Name="SortMenuButton" Click="SortMenuClick" ToolTip="更改排序方式" AutomationProperties.Name="排序"
                                     Style="{StaticResource ToolbarButton}">
@@ -508,7 +508,7 @@
                                 </StackPanel>
                             </Button>
                         </StackPanel>
-                    </Border>
+                    </local:LiquidGlassBorder>
                     <StackPanel x:Name="FileActions" Orientation="Horizontal">
                         <Button Click="NewFolderClick" Margin="0,0,5,0" AutomationProperties.Name="新建文件夹">
                             <StackPanel Orientation="Horizontal">
@@ -528,7 +528,7 @@
                         <ColumnDefinition Width="Auto"/>
                         <ColumnDefinition x:Name="PreviewColumn" Width="0"/>
                     </Grid.ColumnDefinitions>
-                    <Border x:Name="FileListPane" Background="{DynamicResource Panel}" BorderBrush="{DynamicResource Edge}" BorderThickness="1" CornerRadius="12" Padding="4">
+                    <Border x:Name="FileListPane" Background="{DynamicResource Panel}" BorderBrush="{DynamicResource Edge}" BorderThickness="1" CornerRadius="22" Padding="8">
                         <ListView x:Name="FileList" Background="Transparent" BorderThickness="0" Foreground="{DynamicResource Text}"
                                   SelectionMode="Extended" SelectionChanged="FileSelectionChanged"
                                   MouseDoubleClick="OpenDoubleClick" PreviewMouseRightButtonDown="SelectRightClick"
@@ -605,7 +605,7 @@
                                     <GridViewColumn Header="{x:Static local:MainWindow.ModifiedAgeHeader}" Width="102">
                                         <GridViewColumn.CellTemplate>
                                             <DataTemplate>
-                                                <Border CornerRadius="4" Padding="7,2" MinWidth="76" HorizontalAlignment="Left">
+                                                <Border CornerRadius="9" Padding="7,2" MinWidth="76" HorizontalAlignment="Left">
                                                     <Border.DataContext>
                                                         <MultiBinding Converter="{StaticResource FileAgeConverter}" Mode="OneWay">
                                                             <Binding Path="Updated"/>
@@ -648,7 +648,7 @@
                         </ListView>
                     </Border>
                     <Border x:Name="DrivePage" Visibility="Collapsed" Background="{DynamicResource Panel}" BorderBrush="{DynamicResource Edge}"
-                            BorderThickness="1" CornerRadius="10" Padding="12">
+                            BorderThickness="1" CornerRadius="20" Padding="12">
                         <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
                             <StackPanel>
                                 <TextBlock Text="设备和驱动器" Foreground="{DynamicResource Muted}"
@@ -730,7 +730,7 @@
                         </GridSplitter.Template>
                     </GridSplitter>
                     <Border x:Name="PreviewPane" Grid.Column="2" Visibility="Collapsed" Background="{DynamicResource Panel}"
-                            CornerRadius="10" BorderBrush="{DynamicResource Edge}" BorderThickness="1" Padding="12">
+                            CornerRadius="20" BorderBrush="{DynamicResource Edge}" BorderThickness="1" Padding="12">
                         <Grid>
                             <Grid.RowDefinitions>
                                 <RowDefinition Height="Auto"/>
@@ -743,7 +743,7 @@
                                         ToolTip="还原适应窗口。滚轮缩放，拖动查看"/>
                                 <TextBlock Text="预览" FontWeight="SemiBold" Foreground="{DynamicResource Muted}" VerticalAlignment="Center"/>
                             </DockPanel>
-                            <Border Grid.Row="1" Background="{DynamicResource Field}" CornerRadius="8" ClipToBounds="True">
+                            <Border Grid.Row="1" Background="{DynamicResource Field}" CornerRadius="12" ClipToBounds="True">
                                 <Grid>
                                     <ScrollViewer x:Name="PreviewViewport" HorizontalScrollBarVisibility="Hidden" VerticalScrollBarVisibility="Hidden"
                                                   Focusable="False" SizeChanged="PreviewViewportResized" PreviewMouseWheel="PreviewWheel"
@@ -771,7 +771,7 @@
                     </Border>
                 </Grid>
             </Grid>
-            <Grid x:Name="QuickSearchPage" Grid.Column="1" Margin="14,12,14,12" Visibility="Collapsed">
+            <Grid x:Name="QuickSearchPage" Grid.Column="1" Margin="14,16,16,16" Visibility="Collapsed">
                 <Grid.Resources>
                     <Style x:Key="SearchScopeItem" TargetType="ComboBoxItem">
                         <Setter Property="Foreground" Value="{DynamicResource Text}"/>
@@ -815,7 +815,7 @@
                                             <ToggleButton.Template>
                                                 <ControlTemplate TargetType="ToggleButton">
                                                     <Border Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}"
-                                                            BorderThickness="1" CornerRadius="8"/>
+                                                            BorderThickness="1" CornerRadius="18"/>
                                                 </ControlTemplate>
                                             </ToggleButton.Template>
                                         </ToggleButton>
@@ -863,7 +863,7 @@
                     <RowDefinition Height="Auto"/>
                 </Grid.RowDefinitions>
                 <Border Background="{DynamicResource SearchSurface}" BorderBrush="{DynamicResource Edge}" BorderThickness="1"
-                        CornerRadius="12" Padding="16,12,16,14">
+                        CornerRadius="22" Padding="18,16,18,18">
                     <StackPanel>
                         <DockPanel Margin="0,0,0,12">
                             <TextBlock x:Name="QuickEngineLabel" DockPanel.Dock="Right" FontSize="12"
@@ -875,7 +875,7 @@
                                       Style="{StaticResource SearchScopeSelector}"
                                       ToolTip="本地磁盘和已加入索引的网络位置" AutomationProperties.Name="搜索范围"
                                       SelectionChanged="QuickFilterChanged" DisplayMemberPath="Label" SelectedValuePath="Path"/>
-                            <Border BorderThickness="1" Background="{DynamicResource Field}" CornerRadius="8" Padding="10,0">
+                            <Border BorderThickness="1" Background="{DynamicResource Field}" CornerRadius="18" Padding="10,0">
                                 <Border.Style>
                                     <Style TargetType="Border">
                                         <Setter Property="BorderBrush" Value="{DynamicResource Edge}"/>
@@ -954,7 +954,7 @@
                                 <Setter Property="Template">
                                     <Setter.Value>
                                         <ControlTemplate TargetType="RadioButton">
-                                            <Border x:Name="Chip" CornerRadius="8" Padding="10,5" BorderThickness="1"
+                                            <Border x:Name="Chip" CornerRadius="16" Padding="10,5" BorderThickness="1"
                                                     BorderBrush="{DynamicResource Edge}" Background="{DynamicResource Panel}">
                                                 <ContentPresenter/>
                                             </Border>
@@ -982,7 +982,7 @@
                     </StackPanel>
                 </DockPanel>
                 <Border Grid.Row="2" Background="{DynamicResource Panel}" BorderBrush="{DynamicResource Edge}" BorderThickness="1"
-                        CornerRadius="12" Padding="4">
+                        CornerRadius="22" Padding="8">
                     <ListView x:Name="QuickResults" Background="Transparent" BorderThickness="0" Foreground="{DynamicResource Text}"
                               VirtualizingPanel.IsVirtualizing="True" VirtualizingPanel.VirtualizationMode="Recycling"
                               ScrollViewer.CanContentScroll="True" ScrollViewer.HorizontalScrollBarVisibility="Disabled"

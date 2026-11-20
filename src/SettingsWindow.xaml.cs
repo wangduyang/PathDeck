@@ -18,6 +18,13 @@ public partial class SettingsWindow : Window
         InitializeComponent();
     }
 
+    private void OpenHelp(object sender, RoutedEventArgs e)
+    {
+        var help = new HelpWindow { Owner = this };
+        (Application.Current as App)?.TrackWindowTheme(help);
+        help.ShowDialog();
+    }
+
     private void ConfigureFileMenuClick(object sender, RoutedEventArgs e)
     {
         if (Owner is MainWindow browser) browser.ConfigureFileMenu(this);

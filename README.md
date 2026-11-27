@@ -1,79 +1,129 @@
 # PathDeck · 文件管理与桌面工具
 
-PathDeck 是一款面向 Windows 的便携文件资源管理器，集成单栏多标签浏览、跨盘查找和图片检查，适合在项目目录、数据集和输出文件之间频繁切换。
+PathDeck 是面向 Windows 的便携文件管理器，将多标签浏览、跨盘搜索、图像复核与玻璃桌面工具整合在同一个软件中。适合在项目工程、数据集和实验输出之间频繁切换。
 
-当前稳定版本为 **2.0.0**。Windows x64 便携版完整解压后即可运行。
+**当前稳定版：2.0.0** · [下载 Windows x64 便携版](https://github.com/wangduyang/PathDeck/releases/download/v2.0.0/PathDeck-2.0.0-win-x64.zip) · [发布说明](https://github.com/wangduyang/PathDeck/releases/tag/v2.0.0) · [SHA256 校验文件](https://github.com/wangduyang/PathDeck/releases/download/v2.0.0/SHA256SUMS.txt)
 
-## 2.0 统一版
+![PathDeck 2.0 文件管理：多标签、固定路径、文件类型与修改时间、右侧多类别标注预览](docs/images/file-manager-2.0.png)
 
-- 原 TaskGlass 已整合为 PathDeck 的桌面模块。统一使用 `PathDeck.exe` 启动，共用产品图标、运行时和设置入口。
-- 文件管理、任务栏和设置面板使用同一套玻璃材质，通用颜色、不透明度和模糊强度可实时调整。通知共用任务栏的玻璃颜色与模糊参数；桌面分区使用图标下方的独立壁纸材质层，共用配色、不透明度、模糊强度、圆角和边缘材质。
-- 超过两排图标的桌面分区默认折叠为第一排。点击分区空白处或展开箭头平滑展开；鼠标离开 3 秒后自动收起，移回取消收起。第一排图标仍可直接双击和拖动。
+截图使用 **2.0.0 的真实界面控件和演示数据**，仅展示应用内容区域。目录、图像、消息与背景均为演示内容，不包含个人文件或聊天信息；不同截图展示不同的共享配色。
 
-- 文件管理右上角齿轮直接打开“文件管理设置”，调整文件夹关联、Win+E、右键菜单和使用说明。托盘右键 →“桌面与任务栏设置…”调整桌面模块、通知、工作时间及共享外观；两类功能偏好分别管理，颜色、透明度和模糊度实时同步。
-- 桌面模块设置与数据位于便携运行目录的 `Modules/Desktop`；固定路径、文件颜色标签、菜单等文件管理数据仍留在原位置。原 TaskGlass 备份可继续导入。
-- 源码、资源、原生组件和第三方依赖均已纳入当前工程，不依赖另一个 TaskGlass 工程目录。
-- 拖动和调整窗口大小时复用背景纹理，按窗口坐标更新取景，松手后更新背景。拖动期间背后应用的动画使用缓存画面；隐藏或关闭窗口释放缓存。
+## 可以做什么
 
-开机启动统一在 PathDeck 设置中控制。登录时在后台加载桌面模块，文件管理窗口按需打开；开启的 Win+E 快捷键保持可用。
+| 模块 | 主要功能 |
+| --- | --- |
+| 文件管理 | 多标签、路径面包屑、固定位置、颜色标签、相对修改时间、右键终端与 PyCharm、压缩解压与删除进度。 |
+| 快速检索 | 优先使用 Everything；未安装、未运行、连接错误或超时时自动尝试 Windows Search，显示当前引擎与索引范围。 |
+| 图像复核 | 右侧预览、按列表顺序翻图、滚轮缩放和平移、像素读数、绘图测距与另存标注副本。 |
+| 多图与分割 | 同尺寸窗口联动缩放、平移及指针；配对单层 `.nii` / `.nii.gz` 原图与多类别标签，调整叠加不透明度和类别显示。 |
+| 桌面工具 | 任务栏玻璃、可折叠桌面分区、独立通知卡片、一天进度时钟，以及可选的顶部状态栏、启动台与控制中心。 |
+| 共享外观 | 文件管理、任务栏、通知及桌面分区共享颜色、不透明度和模糊参数，保留清晰的文字与图像前景。 |
 
-2.0 将文件管理与桌面工具整合到同一个 PathDeck 中；从旧版升级时请先备份个人配置。
+原 TaskGlass 已整合为 PathDeck 桌面模块，共用 `PathDeck.exe`、运行时与产品图标；无需运行另一个 TaskGlass 工程。
 
-## 2.0 可靠性与性能改进
+## 界面一览
 
-- 删除保留 Windows 安全确认；左下角进度与取消结果继续显示。无法回收时，以系统的永久删除提示为准。
-- 原图或标签被外部覆盖后，保留旧图和标注，或明确选择重新加载；同尺寸、同修改时间的内容替换也会识别。普通翻页不长期缓存未编辑的图。
-- NIfTI 使用单位归一化与像素范围检查空间匹配，包含微小间距、旋转和单像素轴；空间信息无法确认时停用叠加。
-- 当前目录被改名或删除时清空失效列表，原路径恢复后继续刷新。Everything 连接失败或超时也会切换 Windows Search，并重新开始分页。
-- 修复桌面模块重新启动和晚到通知收起；跨屏玻璃缓存覆盖触及的完整显示器，最小化恢复保留原显示器选择。
-- 修正弱化文字、悬停高光、设置卡片和选色输入框的合成对比度；构建标识可从两个设置页查看。
+### 图像与多类别标注复核
 
-回归检查使用合成数据。完整检查包含短暂的界面演示；`--core` 可单独运行文件、图像、通知和缓存逻辑检查。可用环境变量 `PATHDECK_TEST_ROOT` 指定临时测试目录，默认位于 `D:\codex\.tmp`。
+![PathDeck 2.0 图像查看器：三类分割叠加、透明度控制与像素测距，浅色玻璃演示](docs/images/image-review-2.0.png)
 
-```powershell
-dotnet run --project .\tests\PathDeck.Checks.csproj -c Release
-dotnet run --project .\tests\PathDeck.Checks.csproj -c Release -- --core
-```
-## 1.0.7 更新
+同名原图与标签一起展示，按类别控制显隐；滚轮缩放、拖动平移、像素测距与标注导出可在同一窗口完成。原图被外部重新生成时，会提示保留旧图和标注，或重新加载并放弃旧标注。
 
-- 液态玻璃风格：通透面板、圆角胶囊控件、随鼠标移动的高光，并统一浅色与深色界面。Windows 11 22621 及以上使用系统模糊背景，其他环境保留普通背景。
-- 在 **设置 → 使用说明与演示** 查看 10 个场景章节。内嵌真实界面配图，支持播放、暂停、前后翻看与点击放大；离线可用。
-- 使用说明覆盖文件管理、目录与跨盘搜索、图片缩放与多窗口联动、绘图测距，以及 NIfTI 多类别标签与不透明度调节。
+当前支持单层 NIfTI-1；不是完整的 DICOM 序列或三维切片查看器。空间信息无法确认或不匹配时会停用叠加。
 
-![PathDeck 界面](src/HelpImages/browser.png)
+### 时钟进度与独立通知
 
-图中文件与标注均为示例数据；上图为 1.0.7 界面。界面设计参考 [Atrium Desktop](https://github.com/wynter-yaxley/atrium-desktop)，2.0 统一使用原 TaskGlass 的背景采样、模糊和玻璃着色器。
+![PathDeck 2.0 组件演示：亮绿色一天进度时钟与独立微信通知卡片](docs/images/clock-notification-2.0.png)
+
+时钟背景表示 **00:00–24:00** 的一天进度，每分钟更新。已过去的时间连续渐变，工作时段更亮，未到的时间保留原玻璃背景。工作时间可在设置中修改。
+
+提醒以独立卡片显示；点击卡片打开来源，通过其他方式进入来源应用后也会自动收起。可显示的正文取决于来源软件，无法读取摘要时显示“有新消息”。上图是组件演示，不是真实聊天记录。
+
+### 外观、工作时段与桌面分区
+
+<details open>
+<summary>共享玻璃外观</summary>
+
+![PathDeck 2.0 外观与动画设置：颜色、不透明度、圆角与模糊强度](docs/images/appearance-settings-2.0.png)
+
+从托盘右键打开“桌面与任务栏设置…”→“外观与动画”，统一调整玻璃材质。文件管理窗口随之同步。
+
+</details>
+
+<details>
+<summary>工作时段与一天进度</summary>
+
+![PathDeck 2.0 任务栏设置：工作开始与结束时间](docs/images/work-hours-2.0.png)
+
+默认工作时段为 **08:30–17:50**。保存后，时钟背景的高亮范围立即同步。
+
+</details>
+
+<details>
+<summary>桌面分区与自动折叠</summary>
+
+![PathDeck 2.0 桌面分区设置与自动收起说明，区域数量为示例](docs/images/desktop-settings-2.0.png)
+
+按桌面图标现有摆放识别区域。超过两排的分区默认显示第一排，点击空白处或箭头展开；鼠标离开 3 秒后收起，移回取消，拖动期间暂停计时。原有图标位置和源文件保持不变。
+
+</details>
 
 ## 下载并运行
 
-1. 从 [GitHub Releases](https://github.com/wangduyang/PathDeck/releases/tag/v2.0.0) 下载 `PathDeck-2.0.0-win-x64.zip`。
-2. 将 ZIP 完整解压到有写入权限的目录。
-3. 双击 `PathDeck.exe`。便携包内含 .NET 桌面运行时，可以直接启动。
+1. 下载 [PathDeck-2.0.0-win-x64.zip](https://github.com/wangduyang/PathDeck/releases/download/v2.0.0/PathDeck-2.0.0-win-x64.zip)，完整解压到有写入权限的目录。
+2. 双击 `PathDeck.exe`。包内已包含 .NET 桌面运行时，无需另装 .NET。
+3. 文件管理右上角齿轮打开“文件管理设置”；托盘右键进入“桌面与任务栏设置…”。
 
-本次发布适用于 Windows x64，已在 Windows 11 x64 验证。「跨盘搜索」优先使用已运行的 Everything，未运行时自动使用 Windows Search。
+Windows x64 便携版已在 Windows 11 x64 验证。需要核对下载完整性时，对照 [SHA256SUMS.txt](https://github.com/wangduyang/PathDeck/releases/download/v2.0.0/SHA256SUMS.txt) 检查 ZIP 的 SHA256。
+
+## 设置入口
+
+| 入口 | 管理内容 |
+| --- | --- |
+| 文件管理右上角齿轮 | 默认文件管理器、Win+E、右键菜单，以及“使用说明与演示”。 |
+| 托盘右键 → 桌面与任务栏设置… | 共享外观、工作时段、通知、桌面分区、状态栏、启动台、控制中心及桌面模块备份。 |
+| 托盘右键 → 开机启动 | 登录后后台启动 PathDeck；文件窗口按需打开。 |
+
+两处功能设置分别管理，颜色、不透明度和模糊度实时同步。桌面模块的配置导出范围不包含文件管理的固定路径，升级时仍需保留下面列出的文件。
 
 ## 从旧版升级
 
-1. 退出 PathDeck；先备份应用目录内的个人配置。
-2. 保留 `pins.json`、`colors.json`、`menu.json`、`appearance.json`、`win-e.enabled`、`Modules/Desktop/settings.json` 以及已有的 `Modules/Desktop/Data`。
-3. 将新包完整解压到原目录，覆盖程序文件；这些个人配置不会随发行包提供，保留原文件即可。
-4. 继续使用原快捷方式启动。共享外观从托盘“桌面与任务栏设置…”进入；文件管理右上角齿轮调整文件功能。
+1. 退出 PathDeck，先备份原应用目录内的个人配置。
+2. 保留 `pins.json`、`colors.json`、`menu.json`、`appearance.json`、`win-e.enabled`、`Modules/Desktop/settings.json` 及已有的 `Modules/Desktop/Data`。
+3. 将新包完整解压到原目录，覆盖程序文件。发行包不携带个人配置与运行日志，保留原配置即可。
+4. 继续使用原快捷方式启动；保持便携目录路径不变，可以沿用原有启动项和文件夹关联。
+
+## 2.0 可靠性与性能改进
+
+- 删除保留 Windows 安全确认与左下角进度；无法回收时，以系统的永久删除提示为准。
+- 当前目录被外部改名或删除后清空失效列表，原路径恢复后继续刷新。
+- Everything 连接错误或超时自动降级，清空旧分页并同步搜索引擎与范围提示。
+- 编辑状态绑定源图内容与尺寸，避免旧标注静默套到新图；支持识别同尺寸、同修改时间的内容替换。
+- NIfTI 使用归一化单位与像素覆盖范围检查空间匹配，包含微小间距、旋转和单像素轴。
+- 修复晚到通知、桌面模块重新打开、最终文字对比度与跨屏玻璃缓存；普通翻页不长期保留未编辑图像快照。
+
+<details>
+<summary>此前版本</summary>
+
+[1.0.7](https://github.com/wangduyang/PathDeck/releases/tag/v1.0.7) 引入液态玻璃风格与离线图文使用说明；2.0 将桌面工具整合进同一个软件，并更新了共享外观与设置入口。
+
+</details>
+
 ## 同类文件资源管理器比较
 
 | 产品 | 下载或使用费用 | 适用场景 |
 | --- | --- | --- |
-| **PathDeck** | **便携版免费下载** | 单栏多标签、带自定义名称的固定目录，支持 Everything 和 Windows Search 跨盘搜索。内置图像测距、像素读数及 NIfTI 分割叠加，适合浏览数据集和复核图像输出。 |
+| **PathDeck** | **便携版免费下载** | 多标签、固定目录与跨盘搜索，内置图像测距、像素读数和 NIfTI 多类别叠加；同时整合玻璃任务栏、桌面分区与通知，适合项目和数据集工作流。 |
 | [Windows 文件资源管理器](https://support.microsoft.com/zh-cn/windows/experience/fileexplorer/file-explorer-in-windows) | 随 Windows 提供 | 日常文件管理、系统文件夹、Windows Search 和云文件访问。 |
 | [OneCommander](https://www.onecommander.com/) | [个人非商业使用免费，商业使用需购买 Pro](https://www.onecommander.com/pricing) | 多标签浏览、文件与文件夹预览。适合希望使用单栏或双栏来组织文件的用户。 |
 | [Double Commander](https://doublecmd.sourceforge.io/index.php?lang=eng) | 免费、开源 | 双栏文件管理、批量重命名和归档浏览。适合在两个目录之间批量处理文件。 |
 
 在 PathDeck 里，可以用跨盘搜索找到一组实验输出，打开所在目录，再按列表顺序翻图、读像素或查看分割标签。
 
-## 运行与构建
 
-开发和发布需要 [.NET 10 SDK](https://dotnet.microsoft.com/download/dotnet/10.0)。归档功能使用 Windows 自带的 [tar.exe](https://learn.microsoft.com/windows/tar/)。
+## 运行、构建与验证
 
-下载仓库或克隆后，在仓库根目录打开 PowerShell。
+开发需要 [.NET 10 SDK](https://dotnet.microsoft.com/download/dotnet/10.0)。归档功能使用 Windows 自带的 [tar.exe](https://learn.microsoft.com/windows/tar/)。
 
 ```powershell
 git clone https://github.com/wangduyang/PathDeck.git
@@ -82,19 +132,28 @@ dotnet build .\src\QuickFileDesk.csproj -c Release
 dotnet run --project .\src\QuickFileDesk.csproj
 ```
 
-可以在命令行传入一个文件夹路径作为起点。
+可以在命令行传入一个文件夹作为起点：
 
 ```powershell
 dotnet run --project .\src\QuickFileDesk.csproj -- "D:\Work"
 ```
 
-版本在 `Directory.Build.props` 统一维护。下面的命令在全新目录构建自包含 Windows x64 便携版，校验运行时、版本、中文说明和个人配置隔离，再生成 ZIP 与 SHA256。构建标识可在两个模块的设置中查看。发布或备份时请保留整个输出目录。
+版本在 `Directory.Build.props` 统一维护。发布脚本在全新目录生成自包含 Windows x64 便携版，验证运行时、原生组件、版本、中文说明和配置隔离，再生成 ZIP 与 SHA256：
 
 ```powershell
 .\scripts\Build-Portable.ps1
 ```
 
-桌面模块随主工程自动构建；第三方引擎运行文件位于 `modules/Desktop/Runtime`，输出至便携包的 `Modules/Desktop/Engine`。配置与功能说明见 [桌面模块说明](modules/Desktop/README.md)。
+桌面模块随主工程构建；第三方引擎位于 `modules/Desktop/Runtime`，输出至 `Modules/Desktop/Engine`。来源与许可证见 [桌面模块说明](modules/Desktop/README.md)。构建标识可从两个设置页查看。
+
+完整回归检查使用合成数据，包含短暂的界面检查；`--core` 运行文件、搜索、图像、通知与缓存的核心回归：
+
+```powershell
+dotnet run --project .\tests\PathDeck.Checks.csproj -c Release
+dotnet run --project .\tests\PathDeck.Checks.csproj -c Release -- --core
+```
+
+用环境变量 `PATHDECK_TEST_ROOT` 指定临时测试目录；默认位于 `D:\codex\.tmp`。仅本机验证过的场景不代表覆盖所有 Windows 版本、网络断连和多显示器配置。
 
 ## 日常操作
 
@@ -213,6 +272,8 @@ Everything 支持查找其索引中的网络共享。以 UNC 路径加入 Everyt
 | `src/FileThumbnail.cs` | 图片解码与后台缩略图 |
 | `src/SettingsWindow.xaml`、`src/WindowsIntegration.cs`、`src/WinEShortcut.cs` | 设置、用户级系统关联和快捷键 |
 | `src/ControlStyles.xaml` | 弹出菜单与滚动条样式 |
+| `modules/Desktop` | 任务栏、桌面分区、通知、状态栏、启动台与共享玻璃材质 |
+| `scripts/Build-Portable.ps1`、`scripts/Test-Portable.ps1` | 干净便携构建、内容验证与校验和 |
+| `tests/PathDeck.Checks.csproj` | 核心逻辑与界面回归检查 |
 
 修改后可先执行 `dotnet build .\src\QuickFileDesk.csproj -c Release`。在临时目录用样例文件检查右键单选和多选、同名粘贴与解压、缩略图和分隔条。验证系统集成时，在确认生效后可用设置中的恢复入口撤销。
-

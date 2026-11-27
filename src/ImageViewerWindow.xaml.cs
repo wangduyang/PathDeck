@@ -2,6 +2,7 @@ using System.ComponentModel;
 using System.Globalization;
 using System.IO;
 using System.Runtime.InteropServices;
+using System.Security.Cryptography;
 using System.Windows;
 using System.Windows.Automation;
 using System.Windows.Controls;
@@ -15,14 +16,105 @@ public partial class ImageViewerWindow : Window
 {
     private static readonly SemaphoreSlim Decoder = new(1);
     private readonly ReviewItem[] images;
-    private readonly Dictionary<int, ImageEdits> history = new();
+    private readonly Dictionary<int, ImageSource> history = new();
     private readonly List<Color> recentColors = [];
     private int index;
     private CancellationTokenSource? loading;
     private CancellationTokenSource? changingMask;
     private NiftiReview? activeReview;
+    private ImageSource? activeSource;
+    private int activeIndex;
     private bool saving;
     private string saveStatus = "";
+
+    private sealed record ImageSource(BitmapSource Bitmap, PreviewPixels Pixels, NiftiReview? Review,
+        BitmapSource? Overlay, string Version, ImageEdits Edits)
+    {
+        public bool HasWork => Edits.Marks.Count > 0 || Edits.Undone.Count > 0;
+        public bool SameSource(ImageSource other) => Version == other.Version &&
+            Pixels.Width == other.Pixels.Width && Pixels.Height == other.Pixels.Height;
+    }
+
+    private static FileStream OpenSource(string path)
+    {
+        var file = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read);
+        if (NiftiFiles.IsNifti(path) || file.Length <= BrowserImage.MaxFileSize) return file;
+        file.Dispose();
+        throw new NotSupportedException("图片文件超过 64 MB，无法在标注窗口中加载。");
+    }
+
+    private static FileStream? OpenMask(ReviewItem item)
+    {
+        if (item.Mask is null) return null;
+        try { return OpenSource(item.Mask.FullPath); }
+        catch (Exception ex) when (ex is FileNotFoundException or DirectoryNotFoundException) { return null; }
+    }
+
+    private static string SourceVersion(FileStream image, FileStream? mask, CancellationToken token)
+    {
+        string Hash(FileStream file)
+        {
+            using var hash = IncrementalHash.CreateHash(HashAlgorithmName.SHA256);
+            var buffer = new byte[65536];
+            int count;
+            while ((count = file.Read(buffer)) > 0)
+            {
+                token.ThrowIfCancellationRequested();
+                hash.AppendData(buffer, 0, count);
+            }
+            token.ThrowIfCancellationRequested();
+            return Convert.ToHexString(hash.GetHashAndReset());
+        }
+        return Hash(image) + ":" + (mask is null ? "" : Hash(mask));
+    }
+
+    private static ImageSource ReadSource(ReviewItem item, CancellationToken token)
+    {
+        // These read locks keep the fingerprint and the decoder on the same source bytes.
+        using var imageFile = OpenSource(item.FullPath);
+        using var maskFile = OpenMask(item);
+        if (NiftiFiles.IsNifti(item.Name))
+        {
+            var volume = NiftiFiles.Load(maskFile is null ? item with { Mask = null } : item, token);
+            return new(volume.Image, volume.Dimensions, volume,
+                volume.Labels is { Classes.Length: > 0 } labels ? labels.MakeBitmap(null, token) : null,
+                SourceVersion(imageFile, maskFile, token), new ImageEdits());
+        }
+        var (bitmap, pixels) = BrowserImage.LoadEditor(item.FullPath, token);
+        return new(bitmap, pixels, null, null, SourceVersion(imageFile, maskFile, token), new ImageEdits());
+    }
+
+    private static bool SourceChanged(ReviewItem item, ImageSource source, CancellationToken token)
+    {
+        try
+        {
+            using var imageFile = OpenSource(item.FullPath);
+            using var maskFile = OpenMask(item);
+            return source.Version != SourceVersion(imageFile, maskFile, token);
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or NotSupportedException) { return true; }
+    }
+
+    private bool DiscardChangedSource(ReviewItem item) => PathDeckDialogs.Confirm(this, "源文件已改变",
+        $"「{item.Name}」已被其他程序修改。保留旧图可继续编辑并另存原有标注；重新加载会放弃这张旧图上的标注。",
+        "重新加载并放弃旧标注", "保留旧图和标注");
+
+    private void DisplaySource(int requestedIndex, ImageSource source)
+    {
+        activeSource = source;
+        activeIndex = requestedIndex;
+        Editor.SetImage(source.Bitmap, source.Pixels, source.Edits);
+        if (source.Review is { } review)
+        {
+            activeReview = review;
+            Editor.SetReview(review, source.Overlay);
+            ShowMaskOptions(images[requestedIndex], review);
+        }
+        var linkedView = ComparisonPeers().Select(viewer => viewer.Editor.Viewport).FirstOrDefault(view => view.HasValue);
+        if (linkedView is { } view) Editor.ApplyViewport(view);
+        ImageHint.Visibility = Visibility.Collapsed;
+        UpdateEditorControls();
+    }
 
     internal ImageViewerWindow(ReviewItem[] images, int index)
     {
@@ -82,7 +174,13 @@ public partial class ImageViewerWindow : Window
         changingMask?.Cancel();
         using var request = new CancellationTokenSource();
         loading = request;
-        var item = images[index];
+        var requestedIndex = index;
+        var item = images[requestedIndex];
+        var departed = activeSource;
+        var departedIndex = activeIndex;
+        foreach (var unused in history.Where(pair => pair.Key != requestedIndex && !pair.Value.HasWork).Select(pair => pair.Key).ToArray())
+            history.Remove(unused);
+        activeSource = null;
         activeReview = null;
         MaskControls.Visibility = Visibility.Collapsed;
         saveStatus = "";
@@ -95,29 +193,33 @@ public partial class ImageViewerWindow : Window
             await Decoder.WaitAsync(request.Token);
             try
             {
-                var (bitmap, pixels, review, overlay) = await Task.Run(() =>
+                bool IsCurrent() => !request.IsCancellationRequested && ReferenceEquals(loading, request) && index == requestedIndex;
+                if (departed is { HasWork: true } && departedIndex != requestedIndex &&
+                    await Task.Run(() => SourceChanged(images[departedIndex], departed, request.Token), request.Token))
                 {
-                    if (NiftiFiles.IsNifti(item.Name))
-                    {
-                        var volume = NiftiFiles.Load(item, request.Token);
-                        return (volume.Image, volume.Dimensions, (NiftiReview?)volume,
-                            volume.Labels is { Classes.Length: > 0 } labels ? labels.MakeBitmap(null, request.Token) : null);
-                    }
-                    var (image, samples) = BrowserImage.LoadEditor(item.FullPath, request.Token);
-                    return (image, samples, (NiftiReview?)null, (BitmapSource?)null);
-                }, request.Token);
-                if (request.IsCancellationRequested) return;
-                if (!history.TryGetValue(index, out var edits)) history[index] = edits = new ImageEdits();
-                Editor.SetImage(bitmap, pixels, edits);
-                if (review is not null)
-                {
-                    activeReview = review;
-                    Editor.SetReview(review, overlay);
-                    ShowMaskOptions(item, review);
+                    if (!IsCurrent()) return;
+                    var discard = DiscardChangedSource(images[departedIndex]);
+                    if (!IsCurrent()) return;
+                    if (discard) history.Remove(departedIndex);
                 }
-                var linkedView = ComparisonPeers().Select(viewer => viewer.Editor.Viewport).FirstOrDefault(view => view.HasValue);
-                if (linkedView is { } view) Editor.ApplyViewport(view);
-                ImageHint.Visibility = Visibility.Collapsed;
+                var source = await Task.Run(() => ReadSource(item, request.Token), request.Token);
+                if (!IsCurrent()) return;
+                if (history.TryGetValue(requestedIndex, out var previous))
+                {
+                    if (previous.SameSource(source)) source = source with { Edits = previous.Edits };
+                    else if (previous.HasWork)
+                    {
+                        var discard = DiscardChangedSource(item);
+                        if (!IsCurrent()) return;
+                        if (!discard)
+                        {
+                            source = previous;
+                            saveStatus = "源文件已改变 · 正在编辑保留的旧图";
+                        }
+                    }
+                }
+                history[requestedIndex] = source;
+                DisplaySource(requestedIndex, source);
             }
             finally
             {
@@ -128,8 +230,15 @@ public partial class ImageViewerWindow : Window
         catch (Exception ex) when (ex is IOException or InvalidDataException or UnauthorizedAccessException or FormatException or
                                    NotSupportedException or ArgumentException or COMException)
         {
-            if (!request.IsCancellationRequested)
-                ImageHint.Text = NiftiFiles.IsNifti(item.Name) ? ex.Message : "无法加载图片，可用右键「打开方式」";
+            if (!request.IsCancellationRequested && ReferenceEquals(loading, request) && index == requestedIndex)
+            {
+                if (history.TryGetValue(requestedIndex, out var previous) && previous.HasWork)
+                {
+                    saveStatus = "源文件无法读取 · 正在编辑保留的旧图";
+                    DisplaySource(requestedIndex, previous);
+                }
+                else ImageHint.Text = NiftiFiles.IsNifti(item.Name) ? ex.Message : "无法加载图片，可用右键「打开方式」";
+            }
         }
         finally
         {
@@ -293,14 +402,16 @@ public partial class ImageViewerWindow : Window
 
     private async Task SaveCopy()
     {
-        if (saving || !Editor.CanExport || !Editor.CanUndo || !history.TryGetValue(index, out var edits)) return;
+        if (saving || !Editor.CanExport || !Editor.CanUndo || activeSource is not { } source) return;
+        var savedIndex = index;
         var dialog = new AnnotationSaveWindow(images[index].FullPath);
         PathDeckDialogs.Attach(dialog, this);
         if (dialog.ShowDialog() != true) return;
+        if (!ReferenceEquals(activeSource, source) || index != savedIndex) return;
         var destination = dialog.OutputPath;
 
+        var edits = source.Edits;
         var marks = edits.Marks.ToArray();
-        var savedIndex = index;
         saving = true;
         saveStatus = "正在另存标注…";
         UpdateEditorControls();
@@ -309,7 +420,7 @@ public partial class ImageViewerWindow : Window
             var bitmap = Editor.RenderCopy(marks);
             await Task.Run(() => WritePng(destination, bitmap));
             edits.MarkSaved(marks);
-            if (index == savedIndex) saveStatus = "已另存标注 PNG";
+            if (index == savedIndex && activeSource?.Edits == edits) saveStatus = "已另存标注 PNG";
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or ArgumentException or
                                    InvalidOperationException or NotSupportedException or COMException)
@@ -349,7 +460,7 @@ public partial class ImageViewerWindow : Window
     internal bool ConfirmClose()
     {
         if (saving) return false;
-        if (!history.Values.Any(edits => edits.HasUnsavedMarks)) return true;
+        if (!history.Values.Any(source => source.Edits.HasUnsavedMarks)) return true;
         return PathDeckDialogs.Confirm(this, "放弃未保存的标注？", "关闭后，未另存的标注会丢失。",
             "放弃并关闭", "继续编辑");
     }

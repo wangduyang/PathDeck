@@ -34,6 +34,12 @@ public sealed class LiquidGlassBorder : Border
         dc.PushClip(new RectangleGeometry(bounds, radius, radius));
         if (TryFindResource("GlassSheen") is Brush sheen)
             dc.DrawRectangle(sheen, null, bounds);
+        if (TryFindResource("GlassHighlightColor") is Color reflection)
+        {
+            highlight.GradientStops[0].Color = reflection;
+            reflection.A = 36;
+            highlight.GradientStops[1].Color = reflection;
+        }
         highlight.Center = highlight.GradientOrigin = (Point)GetValue(HighlightPositionProperty);
         highlight.RadiusX = Math.Max(.3, 140 / ActualWidth);
         highlight.RadiusY = Math.Max(.65, 80 / ActualHeight);

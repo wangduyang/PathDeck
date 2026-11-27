@@ -9,6 +9,7 @@ namespace QuickFileDesk;
 public partial class MainWindow
 {
     private DirectoryWatch? directoryWatch;
+    private DirectoryWatch? unavailableWatch;
     private readonly DispatcherTimer liveRefreshTimer = new(DispatcherPriority.Background)
     {
         Interval = TimeSpan.FromMilliseconds(300)
@@ -19,6 +20,7 @@ public partial class MainWindow
         if (directoryWatch == next) return;
         directoryWatch?.Dispose();
         directoryWatch = next;
+        unavailableWatch = null;
     }
 
     private async Task RefreshChangedDirectory()
@@ -45,8 +47,27 @@ public partial class MainWindow
             ReuseUnchangedEntries(entries, previous, changes);
             if (query is null) tab.Entries = entries;
             DisplayEntries(entries, preserveView: true);
+            if (unavailableWatch == watch)
+            {
+                unavailableWatch = null;
+                Report("文件夹已恢复。");
+            }
         }
         catch (OperationCanceledException) { }
+        catch (DirectoryNotFoundException)
+        {
+            if (request.IsCancellationRequested || closing || Current != tab || directoryWatch != watch) return;
+            if (working || inlineRename is not null)
+            {
+                watch.RetryLater();
+                return;
+            }
+            if (query is null) tab.Entries = [];
+            DisplayEntries([], preserveView: true);
+            unavailableWatch = watch;
+            Report("文件夹已被移动或删除，正在等待原路径恢复。");
+            watch.RetryLater();
+        }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or ArgumentException or NotSupportedException)
         {
             if (!request.IsCancellationRequested) watch.RetryLater();

@@ -1,0 +1,11 @@
+{
+  "Repository": "https://github.com/Liset999/ZenDesktop",
+  "Commit": "fcd7fcd69e72d0c1ee0dbf87442f733b3db2a88f",
+  "Path": "local@zen-taskbar-height-and-icon-size.wh.cpp",
+  "Version": "1.3.11",
+  "Author": "m417z and Lanbo",
+  "License": "GPL-3.0",
+  "SourceSha256": "D535C02B73E615E294D8B98EF5E5AA72E9F23D5386207EDFB2C1578B3A6BC13B",
+  "DllSha256": "1C619F339B7114C06FC46FF97B43C4963035942047AB8A07FAA75FF2702248DE",
+  "HostSha256": "D8BFE3483F980E736594F619573B180700F611CD28AD8E88DC57FB68F3F19EDD"
+}

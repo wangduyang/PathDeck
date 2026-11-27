@@ -12,6 +12,7 @@ internal sealed class DirectoryWatch : IDisposable
 {
     private readonly object gate = new();
     private readonly FileSystemWatcher? watcher;
+    private readonly FileSystemWatcher? parentWatcher;
     private HashSet<string> paths = new(StringComparer.OrdinalIgnoreCase);
     private bool all;
     private bool polling;
@@ -55,6 +56,33 @@ internal sealed class DirectoryWatch : IDisposable
             candidate?.Dispose();
             polling = true;
         }
+
+        FileSystemWatcher? parent = null;
+        try
+        {
+            var parentPath = System.IO.Path.GetDirectoryName(System.IO.Path.TrimEndingDirectorySeparator(path));
+            if (parentPath is null)
+            {
+                polling = true;
+                return;
+            }
+            parent = new FileSystemWatcher(parentPath) { NotifyFilter = NotifyFilters.DirectoryName };
+            parent.Created += (_, change) => MarkRoot(change.FullPath);
+            parent.Deleted += (_, change) => MarkRoot(change.FullPath);
+            parent.Renamed += (_, change) =>
+            {
+                MarkRoot(change.OldFullPath);
+                MarkRoot(change.FullPath);
+            };
+            parent.Error += (_, _) => InvalidateRoot();
+            parent.EnableRaisingEvents = true;
+            parentWatcher = parent;
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or ArgumentException or SecurityException)
+        {
+            parent?.Dispose();
+            polling = true;
+        }
     }
 
     public string Path { get; }
@@ -76,7 +104,7 @@ internal sealed class DirectoryWatch : IDisposable
 
             if (paths.Count == 0 && !all && (!polling || now < nextPoll)) return null;
 
-            var changes = new DirectoryChanges(paths, all);
+            var changes = new DirectoryChanges(paths, all || polling);
             paths = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
             all = false;
             nextPoll = now + 2000;
@@ -102,5 +130,26 @@ internal sealed class DirectoryWatch : IDisposable
         }
     }
 
-    public void Dispose() => watcher?.Dispose();
+    private void MarkRoot(string path)
+    {
+        if (FileOperations.SamePath(Path, path)) InvalidateRoot();
+    }
+
+    private void InvalidateRoot()
+    {
+        lock (gate)
+        {
+            all = true;
+            paths.Clear();
+            // The child watcher can remain attached to a renamed directory. Poll the original
+            // path after a root change so a replacement directory recovers without reopening.
+            polling = true;
+        }
+    }
+
+    public void Dispose()
+    {
+        parentWatcher?.Dispose();
+        watcher?.Dispose();
+    }
 }

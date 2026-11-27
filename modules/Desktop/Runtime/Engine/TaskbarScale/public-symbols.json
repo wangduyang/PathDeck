@@ -1,0 +1,23 @@
+[
+  {
+    "Name": "Taskbar.pdb",
+    "Key": "3A1B155D8090695D6C3F664EABFC9D501",
+    "Length": 7540736,
+    "Sha256": "CA9966D7F9BE0C5D8137E7E6F61843198C7BAC932BA2375F56C92CB93AF4C1BF",
+    "Source": "https://msdl.microsoft.com/download/symbols/Taskbar.pdb/3A1B155D8090695D6C3F664EABFC9D501/Taskbar.pdb"
+  },
+  {
+    "Name": "Taskbar.View.pdb",
+    "Key": "3BDAB54247D84B12B537B850D095757E1",
+    "Length": 59076608,
+    "Sha256": "92704400ED93A1B853395B8CF6405E3FC16FCC8D14C12A0C06F2E5D24B36D4B4",
+    "Source": "https://msdl.microsoft.com/download/symbols/Taskbar.View.pdb/3BDAB54247D84B12B537B850D095757E1/Taskbar.View.pdb"
+  },
+  {
+    "Name": "explorer.pdb",
+    "Key": "8C89752223D7BA000DA27D57B7CF75031",
+    "Length": 3665920,
+    "Sha256": "B097AF2191AB44FEA298AD58518A60F3535957DD3E065A4FA1E47C7C21DADF00",
+    "Source": "https://msdl.microsoft.com/download/symbols/explorer.pdb/8C89752223D7BA000DA27D57B7CF75031/explorer.pdb"
+  }
+]

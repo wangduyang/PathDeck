@@ -6,6 +6,10 @@
 *.suo
 /artifacts/
 /run/
+/design/
+/docs/superpowers/
+*.log
+last-error.txt
 
 # Portable runtime preferences
 pins.json
@@ -14,6 +18,13 @@ menu.json
 appearance.json
 win-e.enabled
 *.tmp
+/modules/Desktop/settings.json
+/modules/Desktop/status.json
+/modules/Desktop/Data/
+/modules/Desktop/Runtime/settings.json
+/modules/Desktop/Runtime/Data/
+/modules/Desktop/Runtime/Engine/**/Data/Sessions/
+/modules/Desktop/Runtime/Engine/**/Data/Symbols/
 
 # Local verification captures
 /1Commander-preview.png

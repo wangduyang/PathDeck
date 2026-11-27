@@ -1,7 +1,5 @@
 using System.ComponentModel;
 using System.IO;
-using System.Security;
-using System.Text.Json;
 using System.Windows;
 using System.Windows.Threading;
 
@@ -9,12 +7,16 @@ namespace QuickFileDesk;
 
 public partial class App : Application
 {
-    private const string AppearanceFile = "appearance.json";
     private static readonly string WinESettingPath = Path.Combine(AppContext.BaseDirectory, "win-e.enabled");
     private MainWindow? browser;
+    private WindowGlass? browserGlass;
     private WinEShortcut? shortcut;
     private Mutex? shortcutOwner;
     private DispatcherTimer? settingWatcher;
+    private SharedAppearance? appearance;
+    private EventWaitHandle? showFiles, showFileSettings;
+    private RegisteredWaitHandle? filesWait, fileSettingsWait;
+    private Mutex? navigationOwner;
 
     internal bool DarkMode { get; private set; }
     internal bool WinEEnabled => File.Exists(WinESettingPath);
@@ -23,16 +25,14 @@ public partial class App : Application
     protected override void OnStartup(StartupEventArgs e)
     {
         base.OnStartup(e);
-        try
-        {
-            if (ReadAppearance().GetValueOrDefault("darkMode")) ApplyTheme(LoadPalette(darkMode: true), darkMode: true);
-        }
-        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or SecurityException or JsonException)
-        {
-            // A missing or unreadable preference leaves the default light theme available.
-        }
-        ShowBrowser(e.Args.FirstOrDefault());
-        if (!WinEEnabled) return;
+        TaskGlass.GlassMenus.Install(this);
+        appearance = new SharedAppearance(this);
+        DesktopModule.EnsureStarted();
+        bool background = e.Args.Contains("--background");
+        if (!background) ShowBrowser(e.Args.FirstOrDefault(arg => !arg.StartsWith("--")));
+        StartModuleNavigation();
+        if (e.Args.Contains("--file-settings")) ShowFileSettings();
+        if (!WinEEnabled) { if (background) Shutdown(); return; }
         try { StartWinE(); }
         catch (Win32Exception ex) { WinEError = ex.Message; }
     }
@@ -40,20 +40,12 @@ public partial class App : Application
     protected override void OnExit(ExitEventArgs e)
     {
         ReleaseWinE();
+        appearance?.Dispose();
+        filesWait?.Unregister(null); fileSettingsWait?.Unregister(null);
+        showFiles?.Dispose(); showFileSettings?.Dispose();
+        navigationOwner?.ReleaseMutex(); navigationOwner?.Dispose();
         base.OnExit(e);
     }
-
-    internal void SetDarkMode(bool darkMode)
-    {
-        if (darkMode == DarkMode) return;
-        var palette = LoadPalette(darkMode);
-        PortableSettings.Update(AppearanceFile, @"Local\PathDeck.Appearance", ReadAppearance,
-            settings => settings["darkMode"] = darkMode);
-        ApplyTheme(palette, darkMode);
-    }
-
-    private static Dictionary<string, bool> ReadAppearance() =>
-        PortableSettings.Load<Dictionary<string, bool>>(AppearanceFile) ?? [];
 
     private static ResourceDictionary LoadPalette(bool darkMode) => new()
     {
@@ -67,9 +59,46 @@ public partial class App : Application
         foreach (Window window in Windows) WindowsIntegration.SetWindowFrameTheme(window, darkMode);
     }
 
-    internal void TrackWindowTheme(Window window)
+    internal void ApplySharedPalette(bool darkMode) => ApplyTheme(LoadPalette(darkMode), darkMode);
+
+    private void StartModuleNavigation()
     {
+        var owner = new Mutex(true, @"Local\PathDeck.Files.Navigation", out bool first);
+        if (!first) { owner.Dispose(); return; }
+        navigationOwner = owner;
+        showFiles = new EventWaitHandle(false, EventResetMode.AutoReset, @"Local\PathDeck.Files.Show");
+        showFileSettings = new EventWaitHandle(false, EventResetMode.AutoReset, @"Local\PathDeck.Files.Settings");
+        filesWait = ThreadPool.RegisterWaitForSingleObject(showFiles, (_, _) => Dispatcher.BeginInvoke(ActivateBrowser), null, -1, false);
+        fileSettingsWait = ThreadPool.RegisterWaitForSingleObject(showFileSettings, (_, _) => Dispatcher.BeginInvoke(ShowFileSettings), null, -1, false);
+    }
+
+    private void ActivateBrowser()
+    {
+        bool created=browser is null;
+        if (created) ShowBrowser(BrowserTab.DriveOverviewPath);
+        if (browser!.WindowState == WindowState.Minimized)
+        {
+            browserGlass?.Prepare();
+            browser.WindowState = WindowState.Normal;
+        }
+        else if(!created) browserGlass?.Refresh();
+        browser.Activate();
+    }
+
+    internal void ShowFileSettings()
+    {
+        ActivateBrowser();
+        var existing = Windows.OfType<SettingsWindow>().FirstOrDefault();
+        if (existing is not null) { existing.Activate(); return; }
+        var settings = new SettingsWindow { Owner = browser, Icon = browser?.Icon };
+        TrackWindowTheme(settings); settings.Show();
+    }
+
+    internal WindowGlass? TrackWindowTheme(Window window)
+    {
+        var glass = appearance is not null ? new WindowGlass(window, appearance) : null;
         window.SourceInitialized += (_, _) => WindowsIntegration.SetWindowFrameTheme(window, DarkMode);
+        return glass;
     }
 
     internal void SetWinE(bool enabled)
@@ -147,7 +176,12 @@ public partial class App : Application
         if (browser is null) ShowBrowser(BrowserTab.DriveOverviewPath);
         else
         {
-            if (browser.WindowState == WindowState.Minimized) browser.WindowState = WindowState.Normal;
+            if (browser.WindowState == WindowState.Minimized)
+            {
+                browserGlass?.Prepare();
+                browser.WindowState = WindowState.Normal;
+            }
+            else browserGlass?.Refresh();
             browser.Activate();
             browser.ShowDriveOverview();
         }
@@ -156,10 +190,11 @@ public partial class App : Application
     private void ShowBrowser(string? folder)
     {
         var window = new MainWindow(folder);
-        TrackWindowTheme(window);
+        browserGlass=TrackWindowTheme(window);
         browser = window;
         MainWindow = window;
-        window.Closed += (_, _) => browser = null;
+        window.Closed += (_, _) => {browser = null;browserGlass=null;};
+        browserGlass?.Prepare();
         window.Show();
     }
 }

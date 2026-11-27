@@ -1,0 +1,22 @@
+TaskGlass integrated Start/Search style component
+
+Runtime: unmodified official Windhawk 2.0.0-alpha.8 engine (native x64 session API).
+Official binary source: https://github.com/ramensoftware/windhawk/releases/download/2.0.0-alpha.8/windhawk_setup.exe
+Installer SHA256: 7327471E2D93A8C58481321CCE546632ADB146CF125D17D7144D0E7D2A064967
+Authenticode: Valid, Open Source Developer, Michael Maltsev.
+Upstream source: https://github.com/ramensoftware/windhawk/tree/2.0.0-alpha.8
+Windhawk license: GPL3, see Licenses/Windhawk-GPL-3.0.txt.
+This engine is an official pre-release. No Windhawk UI, service, tray or autorun is deployed.
+
+TaskGlass.StartHost.exe is our small native x64 host. It uses the official GlobalHookSessionStart/HandleNewProcesses/End exports. It validates the local two-process filter and monitors TaskGlass/stop-event lifetime. There is no custom remote-memory or shellcode implementation. Sources/StartHost.cpp and build.ps1 are included.
+
+Windows 11 Start Menu Styler 1.8: official source compiled against the Windhawk1.7.3 SDK, preserved unchanged in Sources/windows-11-start-menu-styler.wh.cpp.
+Source origin: https://github.com/ramensoftware/windhawk-mods/blob/main/mods/windows-11-start-menu-styler.wh.cpp
+License: GPL3.
+
+LLVM libc++.whl/libunwind.whl and windhawk-mod-shim.dll: copied unchanged from the official2alpha8 ModsRuntime/64 distribution (same runtime files used by the compiler).
+LLVM license: Apache2 with LLVM exceptions, see Licenses/LLVM-Apache-2.0-with-exceptions.txt.
+
+Microsoft DIA/symbol helper DLLs are copied unchanged from the official engine distribution; Microsoft terms apply separately. They retain embedded signature/version metadata.
+
+Data configuration, Symbols and Sessions are component-local and mutable; static file hashes are in SHA256SUMS.txt. TaskGlass settings and notification content are outside this component directory and are not included.

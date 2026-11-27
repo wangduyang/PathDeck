@@ -245,11 +245,12 @@ internal sealed class NiftiPlane(int width, int height, int type, int bytes, boo
 
     public bool IsAlignedWith(NiftiPlane other)
     {
-        if (Width != other.Width || Height != other.Height || units != other.Units) return false;
+        if (Width != other.Width || Height != other.Height || UnitScale(units) == 0 || UnitScale(other.Units) == 0) return false;
         if (sCode > 0 || other.SCode > 0)
-            return sCode > 0 && sCode == other.SCode && HasAffine(sForm) && Same(sForm, other.SForm) &&
-                (qCode <= 0 || other.QCode <= 0 || qCode == other.QCode && Same(qForm, other.QForm));
-        return qCode > 0 && qCode == other.QCode && qForm[1] > 0 && qForm[2] > 0 && qForm[3] > 0 && Same(qForm, other.QForm);
+            return sCode > 0 && sCode == other.SCode && Aligned(sForm.Select(value => (double)value).ToArray(), units,
+                other.SForm.Select(value => (double)value).ToArray(), other.Units) &&
+                (qCode <= 0 || other.QCode <= 0 || qCode == other.QCode && Aligned(QAffine(qForm), units, QAffine(other.QForm), other.Units));
+        return qCode > 0 && qCode == other.QCode && Aligned(QAffine(qForm), units, QAffine(other.QForm), other.Units);
     }
 
     private int Units => units;
@@ -265,14 +266,61 @@ internal sealed class NiftiPlane(int width, int height, int type, int bytes, boo
     public bool SameVoxels(NiftiPlane other) => type == other.DataType && slope == other.Slope &&
         intercept == other.Intercept && data.AsSpan().SequenceEqual(other.Data);
 
-    private static bool Same(float[] left, float[] right) =>
-        left.Zip(right).All(pair => float.IsFinite(pair.First) && float.IsFinite(pair.Second) && Math.Abs(pair.First - pair.Second) <= 0.00001f);
+    private static double UnitScale(int unit) => unit switch { 1 => 1000, 2 => 1, 3 => .001, _ => 0 };
 
-    private static bool HasAffine(float[] m)
+    private bool Aligned(double[]? left, int leftUnits, double[]? right, int rightUnits)
     {
-        var determinant = (double)m[0] * (m[5] * m[10] - m[6] * m[9]) -
-            (double)m[1] * (m[4] * m[10] - m[6] * m[8]) + (double)m[2] * (m[4] * m[9] - m[5] * m[8]);
-        return double.IsFinite(determinant) && Math.Abs(determinant) > 1e-18;
+        if (left is null || right is null || !HasAffine(left) || !HasAffine(right)) return false;
+        var leftScale = UnitScale(leftUnits);
+        var rightScale = UnitScale(rightUnits);
+        double Step(double[] m, int axis) => Math.Sqrt(m[axis] * m[axis] + m[axis + 4] * m[axis + 4] + m[axis + 8] * m[axis + 8]);
+        // Compare the voxel footprint within 1/1000 of an in-plane voxel, in millimeters.
+        var tolerance = Math.Min(Math.Min(Step(left, 0), Step(left, 1)) * leftScale,
+            Math.Min(Step(right, 0), Step(right, 1)) * rightScale) * .001;
+        foreach (var x in new[] { -.5, Width - .5 })
+            foreach (var y in new[] { -.5, Height - .5 })
+            {
+                var squaredDistance = 0d;
+                for (var row = 0; row < 3; row++)
+                {
+                    var offset = row * 4;
+                    var delta = (left[offset] * x + left[offset + 1] * y + left[offset + 3]) * leftScale -
+                        (right[offset] * x + right[offset + 1] * y + right[offset + 3]) * rightScale;
+                    squaredDistance += delta * delta;
+                }
+                if (!double.IsFinite(squaredDistance) || squaredDistance > tolerance * tolerance) return false;
+            }
+        return true;
+    }
+
+    private static bool HasAffine(double[] m)
+    {
+        if (m.Length != 12 || m.Any(value => !double.IsFinite(value))) return false;
+        var axes = new double[3];
+        for (var axis = 0; axis < 3; axis++)
+            axes[axis] = Math.Sqrt(m[axis] * m[axis] + m[axis + 4] * m[axis + 4] + m[axis + 8] * m[axis + 8]);
+        var determinant = m[0] * (m[5] * m[10] - m[6] * m[9]) -
+            m[1] * (m[4] * m[10] - m[6] * m[8]) + m[2] * (m[4] * m[9] - m[5] * m[8]);
+        return axes.All(axis => axis > 0) && Math.Abs(determinant) > axes[0] * axes[1] * axes[2] * 1e-10;
+    }
+
+    private static double[]? QAffine(float[] q)
+    {
+        if (q.Length != 10 || q.Any(value => !float.IsFinite(value)) || q[1] <= 0 || q[2] <= 0 || q[3] <= 0) return null;
+        double b = q[4], c = q[5], d = q[6];
+        var a = 1 - (b * b + c * c + d * d);
+        if (a < 1e-7)
+        {
+            var length = Math.Sqrt(b * b + c * c + d * d);
+            b /= length; c /= length; d /= length; a = 0;
+        }
+        else a = Math.Sqrt(a);
+        var dx = q[1]; var dy = q[2]; var dz = q[3] * (q[0] < 0 ? -1 : 1);
+        return [
+            (a * a + b * b - c * c - d * d) * dx, 2 * (b * c - a * d) * dy, 2 * (b * d + a * c) * dz, q[7],
+            2 * (b * c + a * d) * dx, (a * a + c * c - b * b - d * d) * dy, 2 * (c * d - a * b) * dz, q[8],
+            2 * (b * d - a * c) * dx, 2 * (c * d + a * b) * dy, (a * a + d * d - c * c - b * b) * dz, q[9]
+        ];
     }
 
     public double ValueAt(int index)

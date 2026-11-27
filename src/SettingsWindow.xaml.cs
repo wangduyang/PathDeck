@@ -16,6 +16,8 @@ public partial class SettingsWindow : Window
     {
         this.integration = integration;
         InitializeComponent();
+        BuildVersionText.Text = typeof(SettingsWindow).Assembly.GetCustomAttributes(typeof(System.Reflection.AssemblyInformationalVersionAttribute), false)
+            .OfType<System.Reflection.AssemblyInformationalVersionAttribute>().Single().InformationalVersion;
     }
 
     private void OpenHelp(object sender, RoutedEventArgs e)
@@ -31,12 +33,7 @@ public partial class SettingsWindow : Window
     }
 
     private void ReadSettings(object sender, RoutedEventArgs e) => ChangeSettings(null);
-
-    private void SelectTheme(object sender, RoutedEventArgs e)
-    {
-        if (Application.Current is App app)
-            ChangeSettings(() => app.SetDarkMode(ReferenceEquals(sender, DarkTheme)));
-    }
+    private void CloseSettings(object sender, RoutedEventArgs e) => Close();
 
     private void ToggleWinE(object sender, RoutedEventArgs e)
     {
@@ -47,8 +44,6 @@ public partial class SettingsWindow : Window
     private void RefreshState()
     {
         var app = Application.Current as App;
-        LightTheme.IsChecked = app?.DarkMode != true;
-        DarkTheme.IsChecked = app?.DarkMode == true;
         var association = integration.ReadDefault();
         DefaultStatus.Text = association switch
         {
@@ -63,11 +58,6 @@ public partial class SettingsWindow : Window
         WinEStatus.Text = app?.WinEError is { } error
             ? $"快捷键未启动（{error}）。请关闭后重新开启。"
             : "开启后，关闭窗口时 PathDeck 会留在后台响应 Win+E。";
-        var startup = integration.ReadStartup();
-        StartupToggle.IsChecked = startup != IntegrationState.Off;
-        StartupStatus.Text = startup == IntegrationState.NeedsUpdate
-            ? "启动项指向其他位置。关闭后重新开启即可更新。"
-            : "登录 Windows 后打开 PathDeck。";
     }
 
     private void ChangeSettings(Action? change)
@@ -93,6 +83,5 @@ public partial class SettingsWindow : Window
 
     private void EnableDefault(object sender, RoutedEventArgs e) => ChangeSettings(() => integration.SetDefault(true));
     private void RestoreDefault(object sender, RoutedEventArgs e) => ChangeSettings(() => integration.SetDefault(false));
-    private void ToggleStartup(object sender, RoutedEventArgs e) => ChangeSettings(() => integration.SetStartup(StartupToggle.IsChecked == true));
 }
 

@@ -71,7 +71,11 @@ internal static class FileOperations
         return new(completed, remaining.ToArray(), errors.ToArray(), moves);
     }
 
-    public static OperationResult Recycle(string[] paths, Action<int> reportCurrentItem)
+    public static OperationResult Recycle(string[] paths, Action<int> reportCurrentItem) =>
+        Recycle(paths, reportCurrentItem, Delete);
+
+    internal static OperationResult Recycle(string[] paths, Action<int> reportCurrentItem,
+        Action<string, bool, UIOption, RecycleOption, UICancelOption> delete)
     {
         var errors = new List<string>();
         var remaining = new List<string>();
@@ -83,11 +87,9 @@ internal static class FileOperations
             try
             {
                 if (!Path.IsPathFullyQualified(path) || Path.GetFileName(Path.TrimEndingDirectorySeparator(path)).Length == 0)
-                    throw new IOException("无法移动该项目到回收站。");
-                if ((File.GetAttributes(path) & FileAttributes.Directory) != 0)
-                    FileSystem.DeleteDirectory(path, UIOption.OnlyErrorDialogs, RecycleOption.SendToRecycleBin, UICancelOption.ThrowException);
-                else
-                    FileSystem.DeleteFile(path, UIOption.OnlyErrorDialogs, RecycleOption.SendToRecycleBin, UICancelOption.ThrowException);
+                    throw new IOException("无法删除该项目。");
+                var directory = (File.GetAttributes(path) & FileAttributes.Directory) != 0;
+                delete(path, directory, UIOption.AllDialogs, RecycleOption.SendToRecycleBin, UICancelOption.ThrowException);
                 completed++;
             }
             catch (OperationCanceledException)
@@ -102,6 +104,12 @@ internal static class FileOperations
             }
         }
         return new(completed, remaining.ToArray(), errors.ToArray());
+    }
+
+    private static void Delete(string path, bool directory, UIOption dialogs, RecycleOption recycle, UICancelOption cancel)
+    {
+        if (directory) FileSystem.DeleteDirectory(path, dialogs, recycle, cancel);
+        else FileSystem.DeleteFile(path, dialogs, recycle, cancel);
     }
 
     public static string AvailableName(string directory, string name, bool folder, string? extensionOverride = null)

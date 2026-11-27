@@ -1,0 +1,56 @@
+TaskGlass native Start menu prototype runtime
+Prepared 2026-11-23. Runtime scope: Windows 11 x64 StartMenuExperienceHost.exe and SearchHost.exe.
+
+ORIGINS AND LICENSES
+
+Windhawk engine 1.7.3 (unmodified 32/windhawk.dll and 64/windhawk.dll)
+  Publisher/project: Ramen Software / Michael Maltsev
+  Binary origin: https://github.com/ramensoftware/windhawk/releases/download/v1.7.3/windhawk_setup.exe
+  Original installer SHA256: 5116CC1703384AAC88B8D7A3B57F172AEA5DA32B6DF7355FB2F8247D23813C8F
+  Extraction: official portable package, Engine/1.7.3/{32,64}; no engine executable is installed or run.
+  License: GNU GPL version 3; see Licenses/Windhawk-GPL-3.0.txt.
+  Corresponding upstream source: https://github.com/ramensoftware/windhawk/tree/v1.7.3
+  Source archive: https://github.com/ramensoftware/windhawk/archive/refs/tags/v1.7.3.zip
+
+Windows 11 Start Menu Styler 1.8 (Data/Mods/64/TaskGlass.StartMenuStyler.dll)
+  Author: m417z / Michael Maltsev
+  Source origin: https://github.com/ramensoftware/windhawk-mods/blob/main/mods/windows-11-start-menu-styler.wh.cpp
+  Source is included unchanged at Sources/windows-11-start-menu-styler.wh.cpp.
+  Source metadata: windows-11-start-menu-styler, version 1.8, x86-64.
+  License: GNU GPL version 3, as specified in the source header.
+  Build: official Windhawk portable Clang compiler, C++23, optimization O2, x86_64-w64-mingw32.
+  Exact flags and compiler diagnostics: native/StartHost/build/commands.json, helper.stderr.txt, mod.stderr.txt.
+
+LLVM libc++ / libunwind (Data/Mods/64/libc++.whl and libunwind.whl)
+  Binary origin: same official portable package, Compiler/x86_64-w64-mingw32/bin.
+  Copied unchanged with the .whl filenames required by upstream compilerUtils.ts.
+  License: Apache License 2.0 with LLVM Exceptions; see Licenses/LLVM-Apache-2.0-with-exceptions.txt.
+  Upstream: https://github.com/llvm/llvm-project
+
+Windhawk mod shim (Data/Mods/64/windhawk-mod-shim.dll)
+  Binary origin: same official portable package, Compiler/x86_64-w64-mingw32/bin/windhawk-mod-shim.dll.
+  Copied unchanged. Part of the official Windhawk compiler/runtime distribution.
+  Distribution notice: Compiler/LICENSE.TXT is included as
+  Licenses/LLVM-Apache-2.0-with-exceptions.txt. The extracted package contains no
+  separate license declaration for this compatibility DLL; no additional license
+  classification is inferred here.
+
+Microsoft debugging support (32 and 64/msdia140_windhawk.dll, symsrv_windhawk.dll, symsrv.yes)
+  Binary origin: same official portable package, Engine/1.7.3/{32,64}.
+  DLLs copied unchanged and retain Microsoft's embedded signatures/version metadata.
+  These Microsoft binaries are proprietary components supplied with the upstream binary package;
+  their Microsoft terms apply separately from Windhawk's GPL and LLVM's license.
+  Microsoft redistribution reference: https://learn.microsoft.com/en-us/visualstudio/releases/2022/redistribution
+
+TaskGlass.StartHost.exe
+  Locally authored minimal x86 host; source and build script included in Sources.
+  Source of truth: D:\codex\TaskGlass\native\StartHost.
+  Imports only Windows system DLLs (KERNEL32.dll, SHELL32.dll, msvcrt.dll).
+  It loads only the local official x86 engine, checks the three session exports,
+  validates local portable storage and an exact two-process allowlist, watches its
+  TaskGlass parent and named stop event, ends the engine session, and exits.
+  --probe loads and checks exports only; it never starts an injection session.
+
+HASHES
+  SHA256SUMS.txt records immutable build/runtime files. Mutable Data INI settings,
+  symbol caches, and mod-status files are intentionally omitted.

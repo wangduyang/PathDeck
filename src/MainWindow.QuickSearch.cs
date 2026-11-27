@@ -85,7 +85,8 @@ public partial class MainWindow
         if (!QuickSearchActive || closing) return;
         quickRequest?.Cancel();
         var drive = SelectedQuickDrive;
-        var useEverything = EverythingSearch.IsRunning;
+        var useEverything = append && quickScopeDrive == drive && quickUsesEverything is bool previousEngine
+            ? previousEngine : EverythingSearch.IsRunning;
         if (quickUsesEverything != useEverything || quickScopeDrive != drive) append = false;
         ShowQuickEngine(useEverything, drive, refreshScope);
         if (!append)
@@ -114,25 +115,18 @@ public partial class MainWindow
         {
             if (debounce) await Task.Delay(160, request.Token);
             bool? folders = QuickFilesOnly.IsChecked == true ? false : QuickFoldersOnly.IsChecked == true ? true : null;
-            IndexedPage page;
-            if (useEverything)
-            {
-                try
-                {
-                    var filter = folders switch { true => "folder: ", false => "file: ", _ => "" };
-                    page = await (everythingSearch ??= new EverythingSearch()).Query(term, filter, drive, quickOffset, request.Token);
-                }
-                catch (Exception ex) when (ex is IOException or TimeoutException &&
-                    !request.IsCancellationRequested && !EverythingSearch.IsRunning)
+            var filter = folders switch { true => "folder: ", false => "file: ", _ => "" };
+            var page = await SearchFallback.Query(useEverything, quickOffset,
+                (offset, token) => (everythingSearch ??= new EverythingSearch()).Query(term, filter, drive, offset, token),
+                (offset, token) => windowsSearch.Query(term, folders, drive, offset, token),
+                () =>
                 {
                     useEverything = false;
                     ShowQuickEngine(false, drive);
                     quickHits.Clear();
                     quickOffset = 0;
-                    page = await windowsSearch.Query(term, folders, drive, quickOffset, request.Token);
-                }
-            }
-            else page = await windowsSearch.Query(term, folders, drive, quickOffset, request.Token);
+                    QuickMore.Visibility = Visibility.Collapsed;
+                }, request.Token);
             if (request.IsCancellationRequested) return;
             foreach (var hit in page.Hits) quickHits.Add(hit);
             var more = page.NextOffset.HasValue;

@@ -1,9 +1,39 @@
-# PathDeck · Windows 文件资源管理器
+# PathDeck · 文件管理与桌面工具
 
 PathDeck 是一款面向 Windows 的便携文件资源管理器，集成单栏多标签浏览、跨盘查找和图片检查，适合在项目目录、数据集和输出文件之间频繁切换。
 
-当前版本为 **1.0.7**。便携版可免费下载。
+当前稳定版本为 **2.0.0**。Windows x64 便携版完整解压后即可运行。
 
+## 2.0 统一版
+
+- 原 TaskGlass 已整合为 PathDeck 的桌面模块。统一使用 `PathDeck.exe` 启动，共用产品图标、运行时和设置入口。
+- 文件管理、任务栏和设置面板使用同一套玻璃材质，通用颜色、不透明度和模糊强度可实时调整。通知共用任务栏的玻璃颜色与模糊参数；桌面分区使用图标下方的独立壁纸材质层，共用配色、不透明度、模糊强度、圆角和边缘材质。
+- 超过两排图标的桌面分区默认折叠为第一排。点击分区空白处或展开箭头平滑展开；鼠标离开 3 秒后自动收起，移回取消收起。第一排图标仍可直接双击和拖动。
+
+- 文件管理右上角齿轮直接打开“文件管理设置”，调整文件夹关联、Win+E、右键菜单和使用说明。托盘右键 →“桌面与任务栏设置…”调整桌面模块、通知、工作时间及共享外观；两类功能偏好分别管理，颜色、透明度和模糊度实时同步。
+- 桌面模块设置与数据位于便携运行目录的 `Modules/Desktop`；固定路径、文件颜色标签、菜单等文件管理数据仍留在原位置。原 TaskGlass 备份可继续导入。
+- 源码、资源、原生组件和第三方依赖均已纳入当前工程，不依赖另一个 TaskGlass 工程目录。
+- 拖动和调整窗口大小时复用背景纹理，按窗口坐标更新取景，松手后更新背景。拖动期间背后应用的动画使用缓存画面；隐藏或关闭窗口释放缓存。
+
+开机启动统一在 PathDeck 设置中控制。登录时在后台加载桌面模块，文件管理窗口按需打开；开启的 Win+E 快捷键保持可用。
+
+2.0 将文件管理与桌面工具整合到同一个 PathDeck 中；从旧版升级时请先备份个人配置。
+
+## 2.0 可靠性与性能改进
+
+- 删除保留 Windows 安全确认；左下角进度与取消结果继续显示。无法回收时，以系统的永久删除提示为准。
+- 原图或标签被外部覆盖后，保留旧图和标注，或明确选择重新加载；同尺寸、同修改时间的内容替换也会识别。普通翻页不长期缓存未编辑的图。
+- NIfTI 使用单位归一化与像素范围检查空间匹配，包含微小间距、旋转和单像素轴；空间信息无法确认时停用叠加。
+- 当前目录被改名或删除时清空失效列表，原路径恢复后继续刷新。Everything 连接失败或超时也会切换 Windows Search，并重新开始分页。
+- 修复桌面模块重新启动和晚到通知收起；跨屏玻璃缓存覆盖触及的完整显示器，最小化恢复保留原显示器选择。
+- 修正弱化文字、悬停高光、设置卡片和选色输入框的合成对比度；构建标识可从两个设置页查看。
+
+回归检查使用合成数据。完整检查包含短暂的界面演示；`--core` 可单独运行文件、图像、通知和缓存逻辑检查。可用环境变量 `PATHDECK_TEST_ROOT` 指定临时测试目录，默认位于 `D:\codex\.tmp`。
+
+```powershell
+dotnet run --project .\tests\PathDeck.Checks.csproj -c Release
+dotnet run --project .\tests\PathDeck.Checks.csproj -c Release -- --core
+```
 ## 1.0.7 更新
 
 - 液态玻璃风格：通透面板、圆角胶囊控件、随鼠标移动的高光，并统一浅色与深色界面。Windows 11 22621 及以上使用系统模糊背景，其他环境保留普通背景。
@@ -12,16 +42,22 @@ PathDeck 是一款面向 Windows 的便携文件资源管理器，集成单栏�
 
 ![PathDeck 界面](src/HelpImages/browser.png)
 
-图中文件与标注均为示例数据。界面设计参考 [Atrium Desktop](https://github.com/wynter-yaxley/atrium-desktop)，当前材质通过 Windows 系统背景模糊与 WPF 动态高光呈现。
+图中文件与标注均为示例数据；上图为 1.0.7 界面。界面设计参考 [Atrium Desktop](https://github.com/wynter-yaxley/atrium-desktop)，2.0 统一使用原 TaskGlass 的背景采样、模糊和玻璃着色器。
 
 ## 下载并运行
 
-1. 从 [GitHub Releases](https://github.com/wangduyang/PathDeck/releases/tag/v1.0.7) 下载 `PathDeck-1.0.7-win-x64.zip`。
+1. 从 [GitHub Releases](https://github.com/wangduyang/PathDeck/releases/tag/v2.0.0) 下载 `PathDeck-2.0.0-win-x64.zip`。
 2. 将 ZIP 完整解压到有写入权限的目录。
 3. 双击 `PathDeck.exe`。便携包内含 .NET 桌面运行时，可以直接启动。
 
 本次发布适用于 Windows x64，已在 Windows 11 x64 验证。「跨盘搜索」优先使用已运行的 Everything，未运行时自动使用 Windows Search。
 
+## 从旧版升级
+
+1. 退出 PathDeck；先备份应用目录内的个人配置。
+2. 保留 `pins.json`、`colors.json`、`menu.json`、`appearance.json`、`win-e.enabled`、`Modules/Desktop/settings.json` 以及已有的 `Modules/Desktop/Data`。
+3. 将新包完整解压到原目录，覆盖程序文件；这些个人配置不会随发行包提供，保留原文件即可。
+4. 继续使用原快捷方式启动。共享外观从托盘“桌面与任务栏设置…”进入；文件管理右上角齿轮调整文件功能。
 ## 同类文件资源管理器比较
 
 | 产品 | 下载或使用费用 | 适用场景 |
@@ -52,11 +88,13 @@ dotnet run --project .\src\QuickFileDesk.csproj
 dotnet run --project .\src\QuickFileDesk.csproj -- "D:\Work"
 ```
 
-用下面的命令构建 Windows x64 便携版。发布或备份时请保留整个输出目录。
+版本在 `Directory.Build.props` 统一维护。下面的命令在全新目录构建自包含 Windows x64 便携版，校验运行时、版本、中文说明和个人配置隔离，再生成 ZIP 与 SHA256。构建标识可在两个模块的设置中查看。发布或备份时请保留整个输出目录。
 
 ```powershell
-dotnet publish .\src\QuickFileDesk.csproj -c Release -r win-x64 --self-contained true -o .\artifacts\win-x64
+.\scripts\Build-Portable.ps1
 ```
+
+桌面模块随主工程自动构建；第三方引擎运行文件位于 `modules/Desktop/Runtime`，输出至便携包的 `Modules/Desktop/Engine`。配置与功能说明见 [桌面模块说明](modules/Desktop/README.md)。
 
 ## 日常操作
 
@@ -76,7 +114,7 @@ Everything 支持查找其索引中的网络共享。以 UNC 路径加入 Everyt
 - 搜索框按回车按名称查找当前目录及其子目录。按 `Esc` 清除搜索。
 - 文件栏上的「排序」支持名称、修改日期、修改于、类型和大小，可以切换升降序以及文件夹是否排在前面。「视图」可以切换详细信息、仅名称、缩略图和小、中、大图标。详细信息和缩略图视图的「修改于」列显示相对时间，用文字和底色标出时间段。当前目录中的新建、删除、重命名和修改会自动刷新列表。
 - 文件操作包括复制、剪切、粘贴、重命名、新建、拖放、属性和回收站。同名粘贴会使用带「副本」后缀的名称。本地固定驱动器以外的删除可通过 Windows 资源管理器处理。
-- 移到回收站时，左下角会在压缩、解压的同一位置显示动态进度条、当前项目、批量操作到了第几项和已用时间。结束后会显示处理结果。
+- 删除时优先移到回收站，Windows 无法回收时可能要求确认永久删除。左下角会在压缩、解压的同一位置显示动态进度条、当前项目、批量操作到了第几项和已用时间。结束后会显示处理结果。
 - 先选中一个文件或文件夹，再慢点一次名称，可直接编辑名称。按回车确认，按 Esc 取消。快速双击会打开该项目。Windows 快捷方式在列表中显示系统图标和快捷方式箭头，指向可访问文件夹的快捷方式会在当前标签页打开。
 - 文件和文件夹可以右键设置颜色标签，支持多选。颜色按完整路径保存在本机。在 PathDeck 内移动或重命名时，已有标签会随路径更新。
 
@@ -133,13 +171,13 @@ Everything 支持查找其索引中的网络共享。以 UNC 路径加入 Everyt
 | `Ctrl+C` / `Ctrl+X` / `Ctrl+V` | 复制 / 剪切 / 粘贴 |
 | `Ctrl+Shift+C` | 复制完整路径 |
 | `Ctrl+Shift+N` | 新建文件夹 |
-| `Enter` / `F2` / `Delete` | 打开 / 重命名 / 移到回收站 |
+| `Enter` / `F2` / `Delete` | 打开 / 重命名 / 删除（优先回收站，留意系统永久删除提示） |
 | `Alt+Enter` / `F5` | 属性 / 刷新 |
 | `Win+E` | 在设置中启用后打开 PathDeck |
 
 ## Windows 集成
 
-右上角齿轮进入「设置」。在「外观」中选择浅色或深色，界面立即切换并记住上次的选择。三个 Windows 集成选项可以独立启用。
+右上角齿轮进入「文件管理设置」，管理默认文件夹关联和 Win+E。共享颜色、透明度与模糊度从托盘右键 →「桌面与任务栏设置…」→「外观与动画」调整；任务栏页可设置工作时段，时钟背景每分钟更新当天已过去的进度。开机启动在托盘菜单中单独控制。
 
 | 选项 | 生效方式 | 恢复方式 |
 | --- | --- | --- |
@@ -156,16 +194,18 @@ Everything 支持查找其索引中的网络共享。以 UNC 路径加入 Everyt
 | `pins.json` | 固定路径和显示标签 |
 | `colors.json` | 按文件系统路径保存的颜色标签 |
 | `menu.json` | 在右键菜单中隐藏的项目 |
-| `appearance.json` | 浅色 / 深色外观 |
+| `appearance.json` | 兼容旧版的文件管理外观偏好；共享玻璃外观以桌面设置为准 |
 | `win-e.enabled` | Win+E 开关标记 |
+| `Modules/Desktop/settings.json` | 共享玻璃外观、工作时间、通知及桌面模块偏好 |
+| `Modules/Desktop/Data` | 启动台等模块数据（如果已使用） |
 
-这些文件生成在应用目录中。开机启动和默认文件夹关联保存在当前用户的 Windows 注册表中。仓库用于保存源码及构建资源，本机路径和个人配置由应用在本地管理。
+这些文件生成在应用目录中。更新前完整备份这些配置及已有的 `Modules/Desktop/Data`，退出程序后替换程序文件；保留个人配置，不要用发行包覆盖本机配置。开机启动和默认文件夹关联保存在当前用户的 Windows 注册表中。仓库用于保存源码及构建资源，本机路径和个人配置由应用在本地管理。
 
 ## 源码导览
 
 | 文件 | 职责 |
 | --- | --- |
-| `src/QuickFileDesk.csproj` | 项目目标、图标和产品版本 |
+| `Directory.Build.props`、`src/QuickFileDesk.csproj` | 统一版本、项目目标和图标 |
 | `src/MainWindow.xaml`、`src/MainWindow.*.cs` | 浏览窗口、地址栏、视图、预览与文件右键菜单 |
 | `src/BrowserData.cs` | 目录读取、固定路径、颜色和便携配置 |
 | `src/FileOperations.cs`、`src/FileClipboard.cs` | 文件操作和 Windows 文件剪贴板 |

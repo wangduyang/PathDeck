@@ -17,8 +17,6 @@ internal enum IntegrationState { Off, Enabled, NeedsUpdate }
 internal sealed class WindowsIntegration(RegistryKey user, string executable, bool notifyShell = true)
 {
     private const string Classes = @"Software\Classes\";
-    private const string StartupKey = @"Software\Microsoft\Windows\CurrentVersion\Run";
-    private const string StartupName = "1Commander";
     private const string Verb = "1Commander.Open";
     private const string PriorDefault = "PreviousDefault";
     private const string CreatedShell = "CreatedShellKey";
@@ -167,13 +165,6 @@ internal sealed class WindowsIntegration(RegistryKey user, string executable, bo
         return current == FolderTypes.Length ? IntegrationState.Enabled : owned == 0 ? IntegrationState.Off : IntegrationState.NeedsUpdate;
     }
 
-    public IntegrationState ReadStartup()
-    {
-        using var run = user.OpenSubKey(StartupKey);
-        var command = run?.GetValue(StartupName);
-        return command is null ? IntegrationState.Off : IsCommand(command, Launcher) ? IntegrationState.Enabled : IntegrationState.NeedsUpdate;
-    }
-
     public void SetDefault(bool enabled)
     {
         using var mutex = new Mutex(false, @"Local\1Commander.FolderAssociations");
@@ -244,20 +235,6 @@ internal sealed class WindowsIntegration(RegistryKey user, string executable, bo
         {
             NotifyAssociationsChanged();
         }
-    }
-
-    public void SetStartup(bool enabled)
-    {
-        if (!enabled)
-        {
-            using var existing = user.OpenSubKey(StartupKey, writable: true);
-            existing?.DeleteValue(StartupName, throwOnMissingValue: false);
-            return;
-        }
-        ValidateLauncher();
-        if (Launcher.Length > 260) throw new IOException("程序路径过长，无法添加到 Windows 启动项。");
-        using var run = user.CreateSubKey(StartupKey);
-        run.SetValue(StartupName, Launcher, RegistryValueKind.String);
     }
 
     private void RestoreDefault(string type)
@@ -424,20 +401,16 @@ internal sealed class WindowsIntegration(RegistryKey user, string executable, bo
         DwmSetWindowAttribute(handle, captionColor, in caption, sizeof(uint));
         DwmSetWindowAttribute(handle, textColor, in text, sizeof(uint));
 
-        // Retain an opaque WPF fallback when the system cannot draw a backdrop.
-        if (window.TryFindResource("WindowBackground") is not Brush tint) return;
-        window.SetCurrentValue(Window.BackgroundProperty, tint);
-        if (!OperatingSystem.IsWindowsVersionAtLeast(10, 0, 22621) || SystemParameters.HighContrast) return;
-        if (HwndSource.FromHwnd(handle)?.CompositionTarget is not { } target) return;
-        const int systemBackdropType = 38;
-        uint acrylic = 3;
-        var margins = new GlassMargins { Left = -1, Right = -1, Top = -1, Bottom = -1 };
-        if (DwmSetWindowAttribute(handle, systemBackdropType, in acrylic, sizeof(uint)) != 0 ||
-            DwmExtendFrameIntoClientArea(handle, in margins) != 0) return;
-        target.BackgroundColor = Colors.Transparent;
-        var glassTint = tint.CloneCurrentValue();
-        glassTint.Opacity = darkMode ? .38 : .32;
-        window.SetCurrentValue(Window.BackgroundProperty, glassTint);
+        // Shared glass owns the client background. DWM retains caption and resize borders.
+        uint backdrop = 1;
+        DwmSetWindowAttribute(handle, 38, in backdrop, sizeof(uint));
+        var margins = new GlassMargins();
+        DwmExtendFrameIntoClientArea(handle, in margins);
+        if (window.TryFindResource("WindowBackground") is SolidColorBrush tint)
+        {
+            uint color = (uint)(tint.Color.R | tint.Color.G << 8 | tint.Color.B << 16);
+            DwmSetWindowAttribute(handle, captionColor, in color, sizeof(uint));
+        }
     }
 
     [StructLayout(LayoutKind.Sequential)]

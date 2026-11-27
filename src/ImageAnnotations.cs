@@ -11,7 +11,7 @@ internal sealed class ImageEdits
     private ImageMark[] saved = [];
     public List<ImageMark> Marks { get; } = [];
     public Stack<ImageMark> Undone { get; } = new();
-    public bool HasUnsavedMarks => Marks.Count > 0 && !Marks.SequenceEqual(saved);
+    public bool HasUnsavedMarks => !Marks.SequenceEqual(saved);
 
     public void MarkSaved(ImageMark[] marks) => saved = marks;
 }

@@ -1,0 +1,11 @@
+# TaskGlass native tray overflow glass
+
+This is an additive module for the existing `Engine/TaskbarScale` portable Windhawk 2.0 alpha8 session. There is no additional host or expanded process filter. Merge `artifacts/tray-glass-20261126/component` into that engine folder. Its files do not replace the host, global settings or taskbar-size module.
+
+The managed `TrayGlassEngine.Configure(Preferences)` writes the dedicated `Data/Mods/taskglass-tray-glass.ini` before `TaskbarScaleEngine.Start()`, and updates that profile when taskbar tint, opacity or blur changes. Call `TrayGlassEngine.Dispose()` before disposing the scale session. Upstream property cleanup restores native values on module unload.
+
+Only `SystemTray.NotificationAreaOverflow`, its `Grid#OverflowRootGrid`, and `Border#OverflowFlyoutBackgroundBorder` (plus its older name alias) are styled. The outer control and root are transparent, all three layers have 14-DIP corners, and the background border receives one `WindhawkBlur` using the shared TaskGlass material. Original icons, hover states, focus, left/right clicks and hit testing remain native.
+
+Source is Windows 11 Taskbar Styler 1.11.2 by m417z, GPL-3.0, pinned to `ramensoftware/windhawk-mods` commit `6f3d126440ecd46f08e48bec2cd9c1e91d3e2919`. `prepare-source.ps1` applies a small reproducible patch: discover the two native overflow window classes, initialize their XAML threads lazily (the ZenDesktop technique), remove the Explorer-restart prompt/command, disable theme-statistics startup, and allow concurrent diagnostics consumers by default. The original source and patched source, GPL license, provenance manifest and hashes accompany the DLL under `Sources/TrayGlass`.
+
+Build with `build.ps1`; verify the package without loading the module into Explorer with `verify-component.ps1`. The standalone checks project under the artifact folder runs `tests/TrayGlassChecks.cs` against an explicitly supplied TaskGlass assembly. Those checks cover generated profile scope, material consistency, transparent root/corners, configuration lifecycle and restoration intent. Native visual corner clipping, actual click behavior and original-background restoration must additionally be verified by opening the real hidden-icons popup during the coordinated root test.

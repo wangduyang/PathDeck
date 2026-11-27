@@ -56,7 +56,7 @@ public partial class MainWindow : Window
                 Menu("粘贴", "Ctrl+V", () => _ = Paste(), "\uE77F", "IconTeal"),
                 new Separator(),
                 (menuRename = Menu("重命名", "F2", () => _ = Rename(), "\uE70F", "IconViolet")),
-                (menuDelete = Menu("移到回收站", "Delete", () => _ = Recycle(), "\uE74D", "IconRed")),
+                (menuDelete = Menu("删除…", "Delete", () => _ = Recycle(), "\uE74D", "IconRed")),
                 new Separator(),
                 (compressMenu = CreateCompressMenu()),
                 (extractMenu = Menu("解压到同名文件夹", "", () => _ = ExtractSelection(), "\uE8DE", "IconGold")),
@@ -149,10 +149,7 @@ public partial class MainWindow : Window
 
     private void OpenSettings(object sender, RoutedEventArgs e)
     {
-        var window = new SettingsWindow { Owner = this, Icon = Icon };
-        (Application.Current as App)?.TrackWindowTheme(window);
-        window.Resources[typeof(Button)] = FindResource(typeof(Button));
-        window.ShowDialog();
+        if (Application.Current is App app) app.ShowFileSettings();
     }
 
     private void CheckClose(object? sender, System.ComponentModel.CancelEventArgs e)
@@ -785,7 +782,7 @@ public partial class MainWindow : Window
             Report("网络位置或可移动驱动器上的文件，请在 Windows 资源管理器中处理。");
             return;
         }
-        if (!PathDeckDialogs.Confirm(this, "移到回收站？", $"将选中的 {paths.Length} 项移到回收站。", "移到回收站", "取消")) return;
+        if (!PathDeckDialogs.Confirm(this, "删除所选项目？", $"将删除选中的 {paths.Length} 项，优先移到回收站。Windows 可能要求确认永久删除，请留意系统提示。", "继续", "取消")) return;
         var elapsed = Stopwatch.StartNew();
         var currentIndex = 0;
 
@@ -794,7 +791,7 @@ public partial class MainWindow : Window
             var index = Volatile.Read(ref currentIndex);
             var path = paths[index];
             var name = Path.GetFileName(Path.TrimEndingDirectorySeparator(path));
-            RecycleProgressText.Text = $"正在移到回收站 · 第 {index + 1}/{paths.Length} 项 · 已用 {elapsed.Elapsed:hh\\:mm\\:ss} · {name}";
+            RecycleProgressText.Text = $"正在删除 · 第 {index + 1}/{paths.Length} 项 · 已用 {elapsed.Elapsed:hh\\:mm\\:ss} · {name}";
             RecycleProgressText.ToolTip = path;
         }
 
@@ -809,7 +806,7 @@ public partial class MainWindow : Window
         timer.Start();
         try
         {
-            await Perform("正在移到回收站…",
+            await Perform("正在删除…",
                 () => FileOperations.Recycle(paths, index => Volatile.Write(ref currentIndex, index)), tab, result =>
             {
                 timer.Stop();
@@ -817,7 +814,7 @@ public partial class MainWindow : Window
                 RecycleProgressText.ToolTip = null;
                 var cleared = MoveColors(paths.Except(result.Remaining, StringComparer.OrdinalIgnoreCase)
                     .Select(path => (path, (string?)null)));
-                var message = $"已移到回收站 {result.Completed} 项";
+                var message = $"已删除 {result.Completed} 项";
                 if (result.Canceled) message = $"操作已取消 · {message}";
                 return message + (cleared ? "" : " · 颜色标签未清除");
             });
